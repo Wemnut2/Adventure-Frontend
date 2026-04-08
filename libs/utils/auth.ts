@@ -5,12 +5,16 @@ interface DecodedToken {
   user_id: number;
   exp: number;
   iat: number;
+  role?: string;
 }
 
 export const setTokens = (accessToken: string, refreshToken: string) => {
   if (typeof window !== 'undefined') {
     localStorage.setItem('access_token', accessToken);
     localStorage.setItem('refresh_token', refreshToken);
+    
+    // Also set as cookie for middleware
+    document.cookie = `access_token=${accessToken}; path=/; max-age=86400`;
   }
 };
 
@@ -32,6 +36,7 @@ export const removeTokens = () => {
   if (typeof window !== 'undefined') {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
   }
 };
 
@@ -55,6 +60,18 @@ export const getUserIdFromToken = (): number | null => {
   try {
     const decoded = jwtDecode<DecodedToken>(token);
     return decoded.user_id;
+  } catch (error) {
+    return null;
+  }
+};
+
+export const getUserRoleFromToken = (): string | null => {
+  const token = getAccessToken();
+  if (!token) return null;
+
+  try {
+    const decoded = jwtDecode<DecodedToken>(token);
+    return decoded.role || 'user';
   } catch (error) {
     return null;
   }

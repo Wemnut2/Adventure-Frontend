@@ -22,7 +22,6 @@ export default function RegisterPage() {
   const { showToast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState(0);
   const registerMutation = useRegister();
 
   const {
@@ -44,15 +43,17 @@ export default function RegisterPage() {
   const password = watch('password');
 
   // Calculate password strength
-  const calculatePasswordStrength = (pass: string) => {
+  const getPasswordStrength = (pass: string) => {
     let strength = 0;
     if (pass.length >= 8) strength++;
     if (pass.match(/[A-Z]/)) strength++;
     if (pass.match(/[a-z]/)) strength++;
     if (pass.match(/[0-9]/)) strength++;
     if (pass.match(/[^A-Za-z0-9]/)) strength++;
-    setPasswordStrength(strength);
+    return strength;
   };
+
+  const passwordStrength = getPasswordStrength(password || '');
 
   const getPasswordStrengthColor = () => {
     if (passwordStrength <= 2) return 'bg-red-500';
@@ -76,14 +77,12 @@ export default function RegisterPage() {
         'success'
       );
       
-      // Redirect to login page after 2 seconds
       setTimeout(() => {
         router.push('/login');
       }, 2000);
     } catch (error: any) {
       console.error('Registration error:', error);
       
-      // Handle specific error responses
       if (error.response?.data?.email) {
         showToast('Email already exists. Please use a different email.', 'error');
       } else if (error.response?.data?.username) {
@@ -139,22 +138,40 @@ export default function RegisterPage() {
             {...register('phone_number')}
           />
 
+          {/* Password Field */}
           <div className="space-y-2">
-            <Input
-              label="Password"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Create a strong password"
-              icon={<Lock className="h-5 w-5 text-gray-400" />}
-              error={errors.password?.message}
-              onChange={(e) => {
-                register('password').onChange(e);
-                calculatePasswordStrength(e.target.value);
-              }}
-              onBlur={register('password').onBlur}
-              name="password"
-            />
+            <div className="relative">
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Create a strong password"
+                  className={`
+                    w-full rounded-lg border border-gray-300 px-4 py-2 pl-10
+                    focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500
+                    ${errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                  `}
+                  {...register('password')}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+              )}
+            </div>
             
-            {password && (
+            {password && password.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Password strength:</span>
@@ -228,14 +245,37 @@ export default function RegisterPage() {
             )}
           </div>
 
-          <Input
-            label="Confirm Password"
-            type={showConfirmPassword ? 'text' : 'password'}
-            placeholder="Confirm your password"
-            icon={<Lock className="h-5 w-5 text-gray-400" />}
-            error={errors.confirm_password?.message}
-            {...register('confirm_password')}
-          />
+          {/* Confirm Password Field */}
+          <div className="relative">
+            <label className="mb-2 block text-sm font-medium text-gray-700">
+              Confirm Password
+            </label>
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <Lock className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                placeholder="Confirm your password"
+                className={`
+                  w-full rounded-lg border border-gray-300 px-4 py-2 pl-10
+                  focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500
+                  ${errors.confirm_password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                `}
+                {...register('confirm_password')}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+              >
+                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            {errors.confirm_password && (
+              <p className="mt-1 text-sm text-red-600">{errors.confirm_password.message}</p>
+            )}
+          </div>
 
           <div className="flex items-center gap-2">
             <input

@@ -16,19 +16,19 @@ interface InvestmentState {
 }
 
 export const useInvestmentStore = create<InvestmentState>((set, get) => ({
-  plans: [],
-  investments: [],
-  transactions: [],
+  plans: [], // Initialize as empty array
+  investments: [], // Initialize as empty array
+  transactions: [], // Initialize as empty array
   isLoading: false,
 
   fetchPlans: async () => {
     set({ isLoading: true });
     try {
       const plans = await investmentService.getInvestmentPlans();
-      set({ plans, isLoading: false });
+      set({ plans: plans || [], isLoading: false }); // Ensure array
     } catch (error) {
-      set({ isLoading: false });
-      throw error;
+      console.error('Error fetching plans:', error);
+      set({ plans: [], isLoading: false }); // Set empty array on error
     }
   },
 
@@ -36,10 +36,10 @@ export const useInvestmentStore = create<InvestmentState>((set, get) => ({
     set({ isLoading: true });
     try {
       const investments = await investmentService.getMyInvestments();
-      set({ investments, isLoading: false });
+      set({ investments: investments || [], isLoading: false }); // Ensure array
     } catch (error) {
-      set({ isLoading: false });
-      throw error;
+      console.error('Error fetching investments:', error);
+      set({ investments: [], isLoading: false }); // Set empty array on error
     }
   },
 
@@ -47,10 +47,10 @@ export const useInvestmentStore = create<InvestmentState>((set, get) => ({
     set({ isLoading: true });
     try {
       const transactions = await investmentService.getMyTransactions();
-      set({ transactions, isLoading: false });
+      set({ transactions: transactions || [], isLoading: false }); // Ensure array
     } catch (error) {
-      set({ isLoading: false });
-      throw error;
+      console.error('Error fetching transactions:', error);
+      set({ transactions: [], isLoading: false }); // Set empty array on error
     }
   },
 
@@ -59,10 +59,11 @@ export const useInvestmentStore = create<InvestmentState>((set, get) => ({
     try {
       const investment = await investmentService.createInvestment({ plan: planId, amount });
       set((state) => ({
-        investments: [investment, ...state.investments],
+        investments: [investment, ...(state.investments || [])], // Ensure array
         isLoading: false,
       }));
     } catch (error) {
+      console.error('Error creating investment:', error);
       set({ isLoading: false });
       throw error;
     }
@@ -76,6 +77,7 @@ export const useInvestmentStore = create<InvestmentState>((set, get) => ({
       await get().fetchTransactions();
       set({ isLoading: false });
     } catch (error) {
+      console.error('Error withdrawing investment:', error);
       set({ isLoading: false });
       throw error;
     }

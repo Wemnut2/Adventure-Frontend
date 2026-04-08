@@ -3,10 +3,15 @@ import { apiService } from './api';
 import { Task, UserTask } from '@/libs/types';
 
 class TaskService {
-  async getAvailableTasks(): Promise<Task[]> {
-    const response = await apiService.get<Task[]>('/tasks/available-tasks/');
-    return response.data;
-  }
+    async getAvailableTasks(): Promise<Task[]> {
+        try {
+            const response = await apiService.get<Task[]>('/tasks/available-tasks/');
+            return Array.isArray(response.data) ? response.data : [];
+        } catch (error) {
+            console.error('Error fetching available tasks:', error);
+            return []; // Always return array on error
+        }
+        }
 
   async getAllTasks(): Promise<Task[]> {
     const response = await apiService.get<Task[]>('/tasks/tasks/');
@@ -38,9 +43,15 @@ class TaskService {
   }
 
   async getMyTasks(): Promise<UserTask[]> {
-    const response = await apiService.get<UserTask[]>('/tasks/my-tasks/');
-    return response.data;
+    try {
+      const response = await apiService.get<UserTask[]>('/tasks/my-tasks/');
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.error('Error fetching my tasks:', error);
+      return []; // Always return array on error
+    }
   }
+  
 }
 
 export const taskService = new TaskService();

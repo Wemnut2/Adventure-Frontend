@@ -14,18 +14,18 @@ interface TaskState {
 }
 
 export const useTaskStore = create<TaskState>((set, get) => ({
-  availableTasks: [],
-  myTasks: [],
+  availableTasks: [], // Initialize as empty array
+  myTasks: [], // Initialize as empty array
   isLoading: false,
 
   fetchAvailableTasks: async () => {
     set({ isLoading: true });
     try {
       const tasks = await taskService.getAvailableTasks();
-      set({ availableTasks: tasks, isLoading: false });
+      set({ availableTasks: tasks || [], isLoading: false }); // Ensure array
     } catch (error) {
-      set({ isLoading: false });
-      throw error;
+      console.error('Error fetching available tasks:', error);
+      set({ availableTasks: [], isLoading: false }); // Set empty array on error
     }
   },
 
@@ -33,10 +33,10 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     set({ isLoading: true });
     try {
       const tasks = await taskService.getMyTasks();
-      set({ myTasks: tasks, isLoading: false });
+      set({ myTasks: tasks || [], isLoading: false }); // Ensure array
     } catch (error) {
-      set({ isLoading: false });
-      throw error;
+      console.error('Error fetching my tasks:', error);
+      set({ myTasks: [], isLoading: false }); // Set empty array on error
     }
   },
 
@@ -45,11 +45,12 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     try {
       const userTask = await taskService.startTask(taskId);
       set((state) => ({
-        myTasks: [userTask, ...state.myTasks],
-        availableTasks: state.availableTasks.filter(t => t.id !== taskId),
+        myTasks: [userTask, ...(state.myTasks || [])], // Ensure array
+        availableTasks: (state.availableTasks || []).filter(t => t.id !== taskId),
         isLoading: false,
       }));
     } catch (error) {
+      console.error('Error starting task:', error);
       set({ isLoading: false });
       throw error;
     }
@@ -63,6 +64,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       await get().fetchAvailableTasks();
       set({ isLoading: false });
     } catch (error) {
+      console.error('Error completing task:', error);
       set({ isLoading: false });
       throw error;
     }

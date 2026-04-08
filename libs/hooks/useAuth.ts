@@ -46,15 +46,22 @@ export const useUserProfile = () => {
 };
 
 export const useActivities = () => {
-  return useQuery({
+  const fetchActivities = useAuthStore((state) => state.fetchActivities);
+  const activities = useAuthStore((state) => state.activities);
+  const isLoading = useAuthStore((state) => state.isLoading);
+
+  useQuery({
     queryKey: ['activities'],
-    queryFn: () => authService.getMyActivities(),
+    queryFn: fetchActivities,
   });
+
+  return { activities, isLoading };
 };
 
 export const useSubscriptionStatus = () => {
   return useQuery({
     queryKey: ['subscription'],
     queryFn: () => authService.checkSubscription(),
+    staleTime: 5 * 60 * 1000,
   });
 };

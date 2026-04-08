@@ -125,8 +125,8 @@ export interface User {
     completed_at?: string;
   }
   
-  // Activity Types
-  export interface ActivityLog {
+// src/types/index.ts - Add ActivityLog type
+export interface ActivityLog {
     id: number;
     user: number;
     user_email: string;

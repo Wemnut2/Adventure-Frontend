@@ -1,7 +1,7 @@
 // src/stores/auth.store.ts
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { User } from '@/libs/types';
+import { User, ActivityLog } from '@/libs/types';
 import { authService } from '@/libs/services/auth.service';
 import { setTokens, removeTokens, getAccessToken } from '@/libs/utils/auth';
 
@@ -9,12 +9,14 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  activities: ActivityLog[];
   login: (email: string, password: string) => Promise<void>;
   register: (data: any) => Promise<void>;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
   updateUser: (data: Partial<User>) => Promise<void>;
   updateAccountInfo: (data: Partial<User>) => Promise<void>;
+  fetchActivities: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -23,6 +25,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       isLoading: false,
+      activities: [],
 
       login: async (email: string, password: string) => {
         set({ isLoading: true });
@@ -58,7 +61,7 @@ export const useAuthStore = create<AuthState>()(
           console.error('Logout error:', error);
         } finally {
           removeTokens();
-          set({ user: null, isAuthenticated: false, isLoading: false });
+          set({ user: null, isAuthenticated: false, isLoading: false, activities: [] });
         }
       },
 
@@ -100,10 +103,24 @@ export const useAuthStore = create<AuthState>()(
           throw error;
         }
       },
+
+      fetchActivities: async () => {
+        set({ isLoading: true });
+        try {
+          const activities = await authService.getMyActivities();
+          set({ activities, isLoading: false });
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
+      partialize: (state) => ({ 
+        user: state.user, 
+        isAuthenticated: state.isAuthenticated 
+      }),
     }
   )
 );
