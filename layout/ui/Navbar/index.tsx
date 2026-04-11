@@ -1,9 +1,10 @@
-// components/layout/Navbar.tsx
+
+
 "use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, TrendingUp, LogIn, UserPlus } from "lucide-react";
+import { Menu, X, TrendingUp } from "lucide-react";
 
 const navLinks = [
   { name: "About", href: "#about" },
@@ -31,13 +32,14 @@ export default function Navbar() {
         scrolled ? "bg-white/95 backdrop-blur-sm shadow-sm" : "bg-white"
       }`}
     >
-      <div className="container-custom">
+      <div className="container-custom px-4 md:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
+
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-orange-500" />
             <span className="font-bold text-lg tracking-tight">
-              The Adventure
+              The Adventure Challenge
             </span>
           </Link>
 
@@ -56,12 +58,19 @@ export default function Navbar() {
 
           {/* Desktop Buttons */}
           <div className="hidden md:flex items-center gap-3">
-            <button className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-orange-500 transition-colors">
+            <Link
+              href="/login"
+              className="px-5 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-full hover:border-orange-500 hover:text-orange-500 transition-colors"
+            >
               Log In
-            </button>
-            <button className="px-5 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 transition-colors shadow-sm">
+            </Link>
+
+            <Link
+              href="/register"
+              className="px-6 py-2 text-sm font-semibold text-white bg-orange-500 rounded-full hover:bg-orange-600 transition-all shadow-sm"
+            >
               Sign Up
-            </button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -77,6 +86,7 @@ export default function Navbar() {
         {isOpen && (
           <div className="md:hidden absolute top-16 left-0 w-full bg-white border-b shadow-lg">
             <div className="flex flex-col p-4 space-y-3">
+
               {navLinks.map((link) => (
                 <Link
                   key={link.name}
@@ -87,13 +97,25 @@ export default function Navbar() {
                   {link.name}
                 </Link>
               ))}
+
               <hr className="my-2" />
-              <button className="w-full py-2 text-sm font-medium text-gray-700 hover:text-orange-500 transition-colors">
+
+              <Link
+                href="/login"
+                onClick={() => setIsOpen(false)}
+                className="w-full py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-full hover:border-orange-500 hover:text-orange-500 transition-colors text-center"
+              >
                 Log In
-              </button>
-              <button className="w-full py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 transition-colors">
+              </Link>
+
+              <Link
+                href="/register"
+                onClick={() => setIsOpen(false)}
+                className="w-full py-2 text-sm font-semibold text-white bg-orange-500 rounded-full hover:bg-orange-600 transition-colors text-center"
+              >
                 Sign Up
-              </button>
+              </Link>
+
             </div>
           </div>
         )}

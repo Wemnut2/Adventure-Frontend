@@ -1,4 +1,3 @@
-// components/sections/FAQ.tsx
 "use client";
 
 import { useState } from "react";
@@ -37,41 +36,58 @@ export default function FAQ() {
   return (
     <section id="faq" className="py-20 bg-gray-50">
       <div className="container-custom">
+
+        {/* Header */}
         <div className="max-w-3xl mx-auto text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-50 border border-orange-200 mb-4">
-            <span className="text-xs font-semibold text-orange-600 tracking-wide">
-              FREQUENTLY ASKED QUESTIONS
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-50 border border-orange-200 rounded-sm mb-4">
+            <span className="text-xs font-semibold text-orange-600 tracking-wide uppercase">
+              Frequently Asked Questions
             </span>
           </div>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900 mb-4">
             Got Questions? We've Got Answers.
           </h2>
-          <p className="text-gray-600 text-lg">
+          <p className="text-gray-500 text-lg">
             Everything you need to know before applying
           </p>
         </div>
 
-        <div className="max-w-2xl mx-auto">
-          {faqs.map((faq, index) => (
-            <div key={index} className="mb-3">
-              <button
-                onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                className="w-full flex justify-between items-center p-4 bg-white border border-gray-200 hover:border-orange-200 transition-all"
+        {/* Accordion */}
+        <div className="max-w-2xl mx-auto space-y-3">
+          {faqs.map((faq, index) => {
+            const isOpen = openIndex === index;
+            return (
+              <div
+                key={index}
+                className={`border rounded-xl overflow-hidden transition-colors ${
+                  isOpen
+                    ? "border-orange-300 bg-white"
+                    : "border-gray-200 bg-white hover:border-orange-200"
+                }`}
               >
-                <span className="text-sm font-semibold text-gray-900">{faq.q}</span>
-                <ChevronDown
-                  className={`w-4 h-4 text-gray-500 transition-transform ${
-                    openIndex === index ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-              {openIndex === index && (
-                <div className="p-4 bg-white border-x border-b border-gray-200">
-                  <p className="text-sm text-gray-600">{faq.a}</p>
-                </div>
-              )}
-            </div>
-          ))}
+                <button
+                  onClick={() => setOpenIndex(isOpen ? null : index)}
+                  className="w-full flex justify-between items-center px-5 py-4 text-left"
+                >
+                  <span className="text-sm font-semibold text-gray-900 pr-4">
+                    {faq.q}
+                  </span>
+                  <ChevronDown
+                    className={`w-4 h-4 flex-shrink-0 text-gray-400 transition-transform duration-200 ${
+                      isOpen ? "rotate-180 text-orange-500" : ""
+                    }`}
+                  />
+                </button>
+
+                {isOpen && (
+                  <div className="px-5 pb-5">
+                    <div className="h-px bg-gray-100 mb-4" />
+                    <p className="text-sm text-gray-600 leading-relaxed">{faq.a}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

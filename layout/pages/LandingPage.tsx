@@ -1,4 +1,7 @@
 // app/page.tsx
+
+import Navbar from "@/layout/ui/Navbar"; // ✅ Import Navbar
+
 import HeroSection from "@/layout/sections/home/HeroSection";
 import AboutChallenge from "@/layout/sections/home/AboutChallenge";
 import HowItWorks from "@/layout/sections/home/HowItWorks";
@@ -17,20 +20,34 @@ import Footer from "../ui/Footer";
 export default function Home() {
   return (
     <main className="min-h-screen bg-white">
-      <HeroSection />
-      <AboutChallenge />
-      <HowItWorks />
-      <RewardsIncentives />
-      <RulesConditions />
-      <WhoCanParticipate />
-      <ExperiencePreview />
-      <WhyTakeChallenge />
-      <Testimonials />
-      <FAQ />
-      <ApplicationSection />
-      <TrustSafety />
-      <AboutCompany />
-      <Footer />
+
+      {/* ✅ Navbar */}
+      <Navbar />
+
+      {/* ✅ Push content down because navbar is fixed */}
+      <div className="pt-20">
+
+        {/* Content with padding */}
+        <div className="px-4 md:px-6 lg:px-8">
+          <HeroSection />
+          <AboutChallenge />
+          <HowItWorks />
+          <RewardsIncentives />
+          <RulesConditions />
+          <WhoCanParticipate />
+          <ExperiencePreview />
+          <WhyTakeChallenge />
+          <Testimonials />
+          <FAQ />
+          <ApplicationSection />
+          <TrustSafety />
+          <AboutCompany />
+        </div>
+
+        {/* Footer stays full width */}
+        <Footer />
+      </div>
+
     </main>
   );
 }
