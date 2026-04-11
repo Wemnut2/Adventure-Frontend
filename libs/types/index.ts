@@ -160,3 +160,26 @@ export interface ActivityLog {
     previous: string | null;
     results: T[];
   }
+
+  export interface User {
+  id: number;
+  email: string;
+  username: string;
+
+  // ✅ ADD IT HERE (INSIDE THE INTERFACE)
+  status: "form_pending" | "payment_pending" | "under_review" | "active";
+
+  role: 'user' | 'admin' | 'super_admin';
+  phone_number?: string;
+  address?: string;
+  is_subscribed: boolean;
+  subscription_start_date?: string;
+  subscription_end_date?: string;
+  bank_name?: string;
+  account_number?: string;
+  account_name?: string;
+  btc_wallet?: string;
+  eth_wallet?: string;
+  usdt_wallet?: string;
+  created_at: string;
+}
