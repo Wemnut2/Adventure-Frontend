@@ -104,10 +104,16 @@ export interface Task {
   id: number;
   title: string;
   description: string;
-  amount_to_pay: number;
-  reward_amount: number;
-  is_active: boolean;
+  video: string | null;
+  video_url: string | null;
+  bronze_price: number;
+  silver_price: number;
+  gold_price: number;
+  bronze_reward: number;
+  silver_reward: number;
+  gold_reward: number;
   requires_subscription: boolean;
+  is_active: boolean;
   created_at: string;
 }
 
@@ -115,15 +121,21 @@ export interface UserTask {
   id: number;
   user: number;
   task: number;
+  tier: 'bronze' | 'silver' | 'gold';
+  status: 'pending_payment' | 'pending_review' | 'in_progress' | 'completed' | 'failed';
   task_title: string;
   task_description: string;
-  task_reward: number;
-  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  task_video_url: string | null;
+  bronze_price: number;
+  silver_price: number;
+  gold_price: number;
+  reward_amount: number;
   payment_proof?: string;
   completion_proof?: string;
   admin_notes?: string;
   started_at: string;
   completed_at?: string;
+  user_email?: string;
 }
 
 export interface ActivityLog {

@@ -299,7 +299,7 @@ export default function ApplicationSection() {
                   type="text"
                   value={formData.preferredPayment}
                   onChange={set("preferredPayment")}
-                  placeholder="e.g. Bank Transfer"
+                  placeholder="e.g. Bank Transfer, USDT, ETH"
                   className={inputClass}
                 />
               </Field>
