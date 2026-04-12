@@ -1,151 +1,13 @@
-// "use client";
-
-// import { useState } from "react";
-// import { Send, CheckCircle } from "lucide-react";
-
-// export default function ApplicationSection() {
-//   const [formData, setFormData] = useState({
-//     name: "",
-//     email: "",
-//     phone: "",
-//     reason: "",
-//   });
-//   const [submitted, setSubmitted] = useState(false);
-
-//   const handleSubmit = (e: React.FormEvent) => {
-//     e.preventDefault();
-//     console.log("Application submitted:", formData);
-//     setSubmitted(true);
-//   };
-
-//   return (
-//     <section id="apply" className="py-20 bg-white">
-//       <div className="container-custom">
-//         <div className="max-w-2xl mx-auto">
-
-//           {/* Header */}
-//           <div className="text-center mb-10">
-//             <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-50 border border-orange-200 rounded-sm mb-4">
-//               <span className="text-xs font-semibold text-orange-600 tracking-wide uppercase">
-//                 Apply Now
-//               </span>
-//             </div>
-//             <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900 mb-4">
-//               Ready to Challenge Yourself?
-//             </h2>
-//             <p className="text-gray-500">
-//               Limited spots available per challenge cycle. Apply early for consideration.
-//             </p>
-//           </div>
-
-//           {/* Success State */}
-//           {submitted ? (
-//             <div className="bg-orange-50 border border-orange-200 rounded-xl p-10 text-center">
-//               <div className="w-14 h-14 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
-//                 <CheckCircle className="w-7 h-7 text-white" />
-//               </div>
-//               <h3 className="text-lg font-bold text-gray-900 mb-2">Application Received!</h3>
-//               <p className="text-sm text-gray-600">
-//                 We'll review your application and contact you within 48 hours.
-//               </p>
-//             </div>
-//           ) : (
-//             <>
-//               {/* Form */}
-//               <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 md:p-8">
-//                 <form onSubmit={handleSubmit} className="space-y-5">
-
-//                   {/* Name */}
-//                   <div>
-//                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-//                       Full Name <span className="text-orange-500">*</span>
-//                     </label>
-//                     <input
-//                       type="text"
-//                       required
-//                       value={formData.name}
-//                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-//                       className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors"
-//                       placeholder="John Doe"
-//                     />
-//                   </div>
-
-//                   {/* Email */}
-//                   <div>
-//                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-//                       Email Address <span className="text-orange-500">*</span>
-//                     </label>
-//                     <input
-//                       type="email"
-//                       required
-//                       value={formData.email}
-//                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-//                       className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors"
-//                       placeholder="john@example.com"
-//                     />
-//                   </div>
-
-//                   {/* Phone */}
-//                   <div>
-//                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-//                       Phone Number <span className="text-orange-500">*</span>
-//                     </label>
-//                     <input
-//                       type="tel"
-//                       required
-//                       value={formData.phone}
-//                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-//                       className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors"
-//                       placeholder="+1 234 567 8900"
-//                     />
-//                   </div>
-
-//                   {/* Reason */}
-//                   <div>
-//                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-//                       Why should we pick you? <span className="text-orange-500">*</span>
-//                     </label>
-//                     <textarea
-//                       required
-//                       rows={4}
-//                       value={formData.reason}
-//                       onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-//                       className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors resize-none"
-//                       placeholder="Tell us about your mental strength, previous challenges, or why you're ready for this..."
-//                     />
-//                   </div>
-
-//                   {/* Submit */}
-//                   <button
-//                     type="submit"
-//                     className="w-full py-3 bg-orange-500 hover:bg-orange-600 active:scale-[0.99] text-white font-semibold text-sm rounded-lg transition-all flex items-center justify-center gap-2"
-//                   >
-//                     <Send className="w-4 h-4" />
-//                     Apply for the Challenge
-//                   </button>
-//                 </form>
-//               </div>
-
-//               {/* Disclaimer */}
-//               <p className="text-center text-xs text-gray-400 mt-4 leading-relaxed">
-//                 By applying, you agree to our privacy policy and terms of participation.
-//                 <br />Selected applicants will undergo a full screening process.
-//               </p>
-//             </>
-//           )}
-//         </div>
-//       </div>
-//     </section>
-//   );
-// }
-
 "use client";
 
 import { useState } from "react";
-import { Send, CheckCircle } from "lucide-react";
+import { Send, CheckCircle, User, MapPin, DollarSign, FileText } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { apiService } from "@/libs/services/api";
+import { openWhatsApp, whatsAppMessages } from "@/libs/utils/whatsapp";
+import { useAuthStore } from "@/libs/stores/auth.store";
 
 type FormData = {
-  // Personal info
   fullName: string;
   address: string;
   gender: string;
@@ -159,19 +21,16 @@ type FormData = {
   preferredPayment: string;
   location: string;
   startDate: string;
-  // Read-only challenge info
-  // Registration $110, Insurance $110, Total Prize from tier
-  // Why
   reason: string;
-  // Signatures
   participantSignature: string;
   participantSignatureDate: string;
 };
 
 const inputClass =
-  "w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-400 transition-colors";
+  "w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400 transition-colors";
 
-const labelClass = "block text-sm font-medium text-gray-700 mb-1.5";
+const selectClass =
+  "w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400 transition-colors";
 
 function Field({
   label,
@@ -183,12 +42,22 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div>
-      <label className={labelClass}>
-        {label}{" "}
-        {required && <span className="text-orange-500">*</span>}
+    <div className="flex flex-col gap-1.5">
+      <label className="text-sm font-medium text-gray-700">
+        {label}{required && <span className="text-orange-500 ml-0.5">*</span>}
       </label>
       {children}
+    </div>
+  );
+}
+
+function SectionHeader({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
+  return (
+    <div className="flex items-center gap-2 pb-3 border-b border-gray-200 mb-4">
+      <div className="bg-orange-100 p-1.5 rounded-lg">
+        <Icon className="w-4 h-4 text-orange-600" />
+      </div>
+      <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">{title}</h3>
     </div>
   );
 }
@@ -214,338 +83,297 @@ export default function ApplicationSection() {
   });
 
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const loadUser = useAuthStore((state) => state.loadUser);
+  const user = useAuthStore((state) => state.user);
+  const router = useRouter();
 
   const set = (field: keyof FormData) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => setFormData((prev) => ({ ...prev, [field]: e.target.value }));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Application submitted:", formData);
-    setSubmitted(true);
+    setLoading(true);
+    try {
+      await apiService.post("/auth/challenge/submit/", {
+        full_name: formData.fullName,
+        address: formData.address,
+        gender: formData.gender,
+        age: formData.age,
+        monthly_income: formData.monthlyIncome,
+        marital_status: formData.maritalStatus,
+        contact_number: formData.contactNumber,
+        email: formData.email,
+        hearing_status: formData.hearingStatus,
+        housing_situation: formData.housingSituation,
+        preferred_payment: formData.preferredPayment,
+        location: formData.location,
+        start_date: formData.startDate,
+        reason: formData.reason,
+        participant_signature: formData.participantSignature,
+        participant_signature_date: formData.participantSignatureDate,
+      });
+
+      await apiService.patch("/auth/profile/", { status: "payment_pending" });
+      await loadUser();
+
+      setSubmitted(true);
+
+      // Send WhatsApp message with user's email so support knows who is paying
+      openWhatsApp(whatsAppMessages.payment(user?.email || formData.email));
+
+      router.replace("/apply");
+
+    } catch (error) {
+      console.error("Submission error:", error);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return (
-    <section id="apply" className="py-20 bg-white">
-      <div className="container-custom">
-        <div className="max-w-3xl mx-auto">
-
-          {/* Header */}
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-50 border border-orange-200 rounded-sm mb-4">
-              <span className="text-xs font-semibold text-orange-600 tracking-wide uppercase">
-                Apply Now
-              </span>
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900 mb-4">
-              Ready to Challenge Yourself?
-            </h2>
-            <p className="text-gray-500">
-              Limited spots available per challenge cycle. Apply early for consideration.
-            </p>
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 text-center max-w-md w-full">
+          <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-5">
+            <CheckCircle className="w-8 h-8 text-white" />
           </div>
-
-          {/* Success State */}
-          {submitted ? (
-            <div className="bg-orange-50 border border-orange-200 rounded-xl p-10 text-center">
-              <div className="w-14 h-14 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-7 h-7 text-white" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Application Received!</h3>
-              <p className="text-sm text-gray-600">
-                We'll review your application and contact you within 48 hours.
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 md:p-8">
-                <form onSubmit={handleSubmit} className="space-y-8">
-
-                  {/* ── Section 1: Participant Information ── */}
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest mb-5 pb-2 border-b border-gray-200">
-                      Participant Information
-                    </h3>
-                    <div className="grid sm:grid-cols-2 gap-5">
-
-                      <Field label="Full Name" required>
-                        <input
-                          type="text"
-                          required
-                          value={formData.fullName}
-                          onChange={set("fullName")}
-                          className={inputClass}
-                          placeholder="John Doe"
-                        />
-                      </Field>
-
-                      <Field label="Age" required>
-                        <input
-                          type="number"
-                          required
-                          min={21}
-                          value={formData.age}
-                          onChange={set("age")}
-                          className={inputClass}
-                          placeholder="e.g. 28"
-                        />
-                      </Field>
-
-                      <Field label="Gender" required>
-                        <select
-                          required
-                          value={formData.gender}
-                          onChange={set("gender")}
-                          className={inputClass}
-                        >
-                          <option value="" disabled>Select gender</option>
-                          <option>Male</option>
-                          <option>Female</option>
-                          <option>Non-binary</option>
-                          <option>Prefer not to say</option>
-                        </select>
-                      </Field>
-
-                      <Field label="Marital Status" required>
-                        <select
-                          required
-                          value={formData.maritalStatus}
-                          onChange={set("maritalStatus")}
-                          className={inputClass}
-                        >
-                          <option value="" disabled>Select status</option>
-                          <option>Single</option>
-                          <option>Married</option>
-                          <option>Divorced</option>
-                          <option>Widowed</option>
-                          <option>Prefer not to say</option>
-                        </select>
-                      </Field>
-
-                      <Field label="Contact Number" required>
-                        <input
-                          type="tel"
-                          required
-                          value={formData.contactNumber}
-                          onChange={set("contactNumber")}
-                          className={inputClass}
-                          placeholder="+1 234 567 8900"
-                        />
-                      </Field>
-
-                      <Field label="Email Address" required>
-                        <input
-                          type="email"
-                          required
-                          value={formData.email}
-                          onChange={set("email")}
-                          className={inputClass}
-                          placeholder="john@example.com"
-                        />
-                      </Field>
-
-                      <Field label="Monthly Income" required>
-                        <input
-                          type="text"
-                          required
-                          value={formData.monthlyIncome}
-                          onChange={set("monthlyIncome")}
-                          className={inputClass}
-                          placeholder="e.g. $3,500"
-                        />
-                      </Field>
-
-                      <Field label="Preferred Payment Method" required>
-                        <select
-                          required
-                          value={formData.preferredPayment}
-                          onChange={set("preferredPayment")}
-                          className={inputClass}
-                        >
-                          <option value="" disabled>Select method</option>
-                          <option>Bank Transfer</option>
-                          <option>PayPal</option>
-                          <option>Cheque</option>
-                          <option>Cryptocurrency</option>
-                          <option>Other</option>
-                        </select>
-                      </Field>
-
-                      <Field label="Hearing Status" required>
-                        <select
-                          required
-                          value={formData.hearingStatus}
-                          onChange={set("hearingStatus")}
-                          className={inputClass}
-                        >
-                          <option value="" disabled>Select status</option>
-                          <option>Normal hearing</option>
-                          <option>Mild hearing loss</option>
-                          <option>Moderate hearing loss</option>
-                          <option>Deaf</option>
-                        </select>
-                      </Field>
-
-                      <Field label="Housing Situation" required>
-                        <select
-                          required
-                          value={formData.housingSituation}
-                          onChange={set("housingSituation")}
-                          className={inputClass}
-                        >
-                          <option value="" disabled>Select situation</option>
-                          <option>Own home</option>
-                          <option>Renting</option>
-                          <option>Living with family</option>
-                          <option>Other</option>
-                        </select>
-                      </Field>
-
-                      <Field label="Address" required>
-                        <input
-                          type="text"
-                          required
-                          value={formData.address}
-                          onChange={set("address")}
-                          className={inputClass}
-                          placeholder="123 Main St, City, Country"
-                        />
-                      </Field>
-
-                      <Field label="Location (City / Country)" required>
-                        <input
-                          type="text"
-                          required
-                          value={formData.location}
-                          onChange={set("location")}
-                          className={inputClass}
-                          placeholder="e.g. Lagos, Nigeria"
-                        />
-                      </Field>
-
-                      <Field label="Preferred Start Date" required>
-                        <input
-                          type="date"
-                          required
-                          value={formData.startDate}
-                          onChange={set("startDate")}
-                          className={inputClass}
-                        />
-                      </Field>
-
-                    </div>
-                  </div>
-
-                  {/* ── Section 2: Why should we pick you ── */}
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest mb-5 pb-2 border-b border-gray-200">
-                      Your Application
-                    </h3>
-                    <Field label="Why should we pick you?" required>
-                      <textarea
-                        required
-                        rows={4}
-                        value={formData.reason}
-                        onChange={set("reason")}
-                        className={`${inputClass} resize-none`}
-                        placeholder="Tell us about your mental strength, previous challenges, or why you're ready for this..."
-                      />
-                    </Field>
-                  </div>
-
-                  {/* ── Section 3: Fees & Prize ── */}
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest mb-5 pb-2 border-b border-gray-200">
-                      Fees & Prize Summary
-                    </h3>
-                    <div className="grid sm:grid-cols-3 gap-4">
-                      <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
-                        <p className="text-xs text-gray-500 mb-1">Registration Fee</p>
-                        <p className="text-lg font-bold text-gray-900">$110</p>
-                      </div>
-                      <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
-                        <p className="text-xs text-gray-500 mb-1">Insurance Fee</p>
-                        <p className="text-lg font-bold text-gray-900">$110</p>
-                      </div>
-                      <div className="bg-orange-50 border border-orange-200 rounded-lg px-4 py-3">
-                        <p className="text-xs text-orange-600 mb-1">Total Prize (up to)</p>
-                        <p className="text-lg font-bold text-orange-500">$60,000</p>
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-3 leading-relaxed">
-                      Once you complete the challenge, you will be eligible to claim your rewards
-                      based on the duration tier achieved.
-                    </p>
-                  </div>
-
-                  {/* ── Section 4: Signatures ── */}
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest mb-5 pb-2 border-b border-gray-200">
-                      Signatures
-                    </h3>
-                    <div className="grid sm:grid-cols-2 gap-5">
-
-                      {/* Participant signature */}
-                      <Field label="Participant Signature" required>
-                        <input
-                          type="text"
-                          required
-                          value={formData.participantSignature}
-                          onChange={set("participantSignature")}
-                          className={`${inputClass} italic`}
-                          placeholder="Type your full name as signature"
-                        />
-                      </Field>
-
-                      <Field label="Date" required>
-                        <input
-                          type="date"
-                          required
-                          value={formData.participantSignatureDate}
-                          onChange={set("participantSignatureDate")}
-                          className={inputClass}
-                        />
-                      </Field>
-
-                      {/* CEO signature — read-only, filled after approval */}
-                      <div>
-                        <label className={labelClass}>C.E.O Signature</label>
-                        <div className="w-full px-4 py-2.5 bg-gray-100 border border-dashed border-gray-300 rounded-lg text-sm text-gray-400 italic">
-                          To be signed upon approval
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className={labelClass}>Date</label>
-                        <div className="w-full px-4 py-2.5 bg-gray-100 border border-dashed border-gray-300 rounded-lg text-sm text-gray-400 italic">
-                          To be filled upon approval
-                        </div>
-                      </div>
-
-                    </div>
-                  </div>
-
-                  {/* Submit */}
-                  <button
-                    type="submit"
-                    className="w-full py-3.5 bg-orange-500 hover:bg-orange-600 active:scale-[0.99] text-white font-semibold text-sm rounded-lg transition-all flex items-center justify-center gap-2"
-                  >
-                    <Send className="w-4 h-4" />
-                    Submit Application
-                  </button>
-
-                </form>
-              </div>
-
-              {/* Disclaimer */}
-              <p className="text-center text-xs text-gray-400 mt-4 leading-relaxed">
-                By applying, you agree to our privacy policy and terms of participation.
-                <br />Selected applicants will undergo a full medical and psychological screening process.
-              </p>
-            </>
-          )}
+          <h3 className="text-xl font-bold text-gray-900 mb-2">Application Submitted!</h3>
+          <p className="text-sm text-gray-500 mt-1">
+            You'll be redirected to WhatsApp to complete your payment.
+          </p>
         </div>
       </div>
-    </section>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header Banner */}
+      <div className="bg-white px-6 py-10 text-center ">
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-500/20 border border-orange-400/30 rounded-full mb-4">
+          <span className="text-xs font-semibold text-orange-600 tracking-wide uppercase">
+            Application Form
+          </span>
+        </div>
+        <h1 className="text-2xl md:text-3xl font-bold mb-2">Ready to Challenge Yourself?</h1>
+        <p className="text-gray-400 text-sm">Fill in your details below. Limited spots available.</p>
+      </div>
+
+      {/* Form */}
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
+
+          {/* Personal Info */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <SectionHeader icon={User} title="Personal Information" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <Field label="Full Name" required>
+                  <input
+                    type="text"
+                    required
+                    value={formData.fullName}
+                    onChange={set("fullName")}
+                    placeholder="John Doe"
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+              <Field label="Email" required>
+                <input
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={set("email")}
+                  placeholder="john@example.com"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Phone Number" required>
+                <input
+                  type="tel"
+                  required
+                  value={formData.contactNumber}
+                  onChange={set("contactNumber")}
+                  placeholder="+1(234)..."
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Gender" required>
+                <select required value={formData.gender} onChange={set("gender")} className={selectClass}>
+                  <option value="">Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </Field>
+              <Field label="Age" required>
+                <input
+                  type="number"
+                  required
+                  value={formData.age}
+                  onChange={set("age")}
+                  placeholder="25"
+                  min="18"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Marital Status" required>
+                <select required value={formData.maritalStatus} onChange={set("maritalStatus")} className={selectClass}>
+                  <option value="">Select status</option>
+                  <option value="Single">Single</option>
+                  <option value="Married">Married</option>
+                  <option value="Divorced">Divorced</option>
+                  <option value="Widowed">Widowed</option>
+                </select>
+              </Field>
+              <Field label="Hearing Status">
+                <input
+                  type="text"
+                  value={formData.hearingStatus}
+                  onChange={set("hearingStatus")}
+                  placeholder="e.g. Normal"
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+          </div>
+
+          {/* Location */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <SectionHeader icon={MapPin} title="Location & Housing" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <Field label="Address" required>
+                  <input
+                    type="text"
+                    required
+                    value={formData.address}
+                    onChange={set("address")}
+                    placeholder="123 Main St, Los Angeles, CA"
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+              <Field label="City / Location" required>
+                <input
+                  type="text"
+                  required
+                  value={formData.location}
+                  onChange={set("location")}
+                  placeholder="Los Angeles"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Housing Situation">
+                <input
+                  type="text"
+                  value={formData.housingSituation}
+                  onChange={set("housingSituation")}
+                  placeholder="e.g. Renting"
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+          </div>
+
+          {/* Financial */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <SectionHeader icon={DollarSign} title="Financial Information" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Field label="Monthly Income" required>
+                <input
+                  type="text"
+                  required
+                  value={formData.monthlyIncome}
+                  onChange={set("monthlyIncome")}
+                  placeholder="e.g. $150,000"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Preferred Payment Method">
+                <input
+                  type="text"
+                  value={formData.preferredPayment}
+                  onChange={set("preferredPayment")}
+                  placeholder="e.g. Bank Transfer"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Challenge Start Date">
+                <input
+                  type="date"
+                  value={formData.startDate}
+                  onChange={set("startDate")}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+          </div>
+
+          {/* Declaration */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <SectionHeader icon={FileText} title="Declaration & Signature" />
+            <div className="space-y-4">
+              <Field label="Why should we pick you?" required>
+                <textarea
+                  required
+                  value={formData.reason}
+                  onChange={set("reason")}
+                  rows={4}
+                  placeholder="Tell us why you're the right candidate..."
+                  className={inputClass}
+                />
+              </Field>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Field label="Signature">
+                  <input
+                    type="text"
+                    value={formData.participantSignature}
+                    onChange={set("participantSignature")}
+                    placeholder="Enter Your signature"
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="Signature Date">
+                  <input
+                    type="date"
+                    value={formData.participantSignatureDate}
+                    onChange={set("participantSignatureDate")}
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+            </div>
+          </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-4 bg-orange-500 hover:bg-orange-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-2xl flex items-center justify-center gap-2 transition-colors"
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+                Submitting...
+              </span>
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                Submit Application
+              </>
+            )}
+          </button>
+
+        </form>
+      </div>
+    </div>
   );
 }
