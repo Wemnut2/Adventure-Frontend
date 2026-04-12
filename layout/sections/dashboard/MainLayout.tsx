@@ -39,7 +39,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <AccessGate>
+    // <AccessGate>
       <div className="min-h-screen bg-gray-50">
         <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
 
@@ -49,6 +49,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
-    </AccessGate>
+    // </AccessGate>
   );
 }

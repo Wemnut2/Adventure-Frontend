@@ -199,7 +199,7 @@ export default function ApplicationSection() {
                   required
                   value={formData.contactNumber}
                   onChange={set("contactNumber")}
-                  placeholder="+1(234)..."
+                  placeholder="+1(546)..."
                   className={inputClass}
                 />
               </Field>
