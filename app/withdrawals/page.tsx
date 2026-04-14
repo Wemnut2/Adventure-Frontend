@@ -50,6 +50,8 @@ export default function WithdrawalsPage() {
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showSupportModal, setShowSupportModal] = useState(false);
+const [supportMessage, setSupportMessage] = useState("");
 
   const [paymentInfo, setPaymentInfo] = useState({
     bank_name:      user?.bank_name      || '',
@@ -61,6 +63,19 @@ export default function WithdrawalsPage() {
   });
 
   useEffect(() => { fetchTransactions(); }, []);
+
+  useEffect(() => {
+  if (user) {
+    setPaymentInfo({
+      bank_name: user.bank_name || '',
+      account_number: user.account_number || '',
+      account_name: user.account_name || '',
+      btc_wallet: user.btc_wallet || '',
+      eth_wallet: user.eth_wallet || '',
+      usdt_wallet: user.usdt_wallet || '',
+    });
+  }
+}, [user]);
 
   const investmentsArr  = Array.isArray(investments)  ? investments  : [];
   const transactionsArr = Array.isArray(transactions) ? transactions : [];
@@ -114,8 +129,8 @@ export default function WithdrawalsPage() {
         `📋 Details: ${walletDetails}\n` +
         `👤 Email: ${user?.email}\n\n` +
         `Please process my withdrawal. Thank you.`;
-      openWhatsApp(message);
-      openTelegram(message);
+      setSupportMessage(message);
+setShowSupportModal(true);
       setWithdrawAmount('');
       await fetchTransactions();
     } catch {
@@ -329,7 +344,7 @@ export default function WithdrawalsPage() {
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Bank Transfer</p>
                 </div>
                 <div className="space-y-3">
-                  <div><label className="text-sm font-medium text-gray-700 mb-1 block">Bank Name</label><input type="text" value={paymentInfo.bank_name} onChange={(e) => setPaymentInfo({ ...paymentInfo, bank_name: e.target.value })} placeholder="e.g. First Bank" className={inputClass} /></div>
+                  <div><label className="text-sm font-medium text-gray-700 mb-1 block">Bank Name</label><input type="text" value={paymentInfo.bank_name} onChange={(e) => setPaymentInfo({ ...paymentInfo, bank_name: e.target.value })} placeholder="e.g. Chase Bank" className={inputClass} /></div>
                   <div><label className="text-sm font-medium text-gray-700 mb-1 block">Account Number</label><input type="text" value={paymentInfo.account_number} onChange={(e) => setPaymentInfo({ ...paymentInfo, account_number: e.target.value })} placeholder="0123456789" className={inputClass} /></div>
                   <div><label className="text-sm font-medium text-gray-700 mb-1 block">Account Name</label><input type="text" value={paymentInfo.account_name} onChange={(e) => setPaymentInfo({ ...paymentInfo, account_name: e.target.value })} placeholder="John Doe" className={inputClass} /></div>
                 </div>
@@ -366,12 +381,71 @@ export default function WithdrawalsPage() {
           </div>
         </div>
       )}
+
+
+      {showSupportModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+    
+    <div className="bg-white rounded-2xl p-6 w-[90%] max-w-sm shadow-2xl animate-in fade-in zoom-in-95">
+      
+      {/* Header */}
+      <div className="text-center mb-5">
+        <h2 className="text-lg font-bold text-gray-900">
+          Contact Support
+        </h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Choose your preferred platform
+        </p>
+      </div>
+
+      {/* Buttons */}
+      <div className="flex flex-col gap-3">
+        
+        {/* WhatsApp */}
+        <button
+          onClick={() => {
+            openWhatsApp(supportMessage);
+            setShowSupportModal(false);
+          }}
+          className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-medium transition-all shadow-sm hover:shadow-md"
+        >
+          <WhatsAppIcon />
+          Continue with WhatsApp
+        </button>
+
+        {/* Telegram */}
+        <button
+          onClick={() => {
+            openTelegram(supportMessage);
+            setShowSupportModal(false);
+          }}
+          className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition-all shadow-sm hover:shadow-md"
+        >
+          <TelegramIcon />
+          Continue with Telegram
+        </button>
+      </div>
+
+      {/* Divider */}
+      <div className="flex items-center gap-2 my-4">
+        <div className="flex-1 h-px bg-gray-200" />
+        <span className="text-xs text-gray-400">or</span>
+        <div className="flex-1 h-px bg-gray-200" />
+      </div>
+
+      {/* Cancel */}
+      <button
+        onClick={() => setShowSupportModal(false)}
+        className="w-full py-2 text-sm text-gray-500 hover:text-gray-700 transition"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+)}
     </MainLayout>
   );
 }
 
 
 
-// Now the form is saying something wrong it is not submitting also the Telegram or whatsapp just goes to whatsapp for the latys three you created and for the first one in mainlayout it goes to telegram.org also on the withdrawal i get Property 'requestWithdrawal' does not exist on type 'InvestmentService'.ts(2339)
-
-// any

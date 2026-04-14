@@ -110,10 +110,10 @@ export default function ApplicationSection() {
       openTelegram(msg);
 
       router.replace("/apply");
-    } catch (error) {
-      console.error("Submission error:", error);
-      alert("Something went wrong. Please try again.");
-    } finally {
+   } catch (error: any) {
+  console.error("Submission error:", error?.response?.data || error);
+  alert(error?.response?.data?.message || "Submission failed");
+} finally {
       setLoading(false);
     }
   };

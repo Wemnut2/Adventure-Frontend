@@ -151,6 +151,8 @@ export default function TasksPage() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [showSupportModal, setShowSupportModal] = useState(false);
+const [supportMessage, setSupportMessage] = useState("");
 
   useEffect(() => {
     fetchAvailableTasks();
@@ -176,8 +178,8 @@ export default function TasksPage() {
       `👤 Email: ${user?.email}\n` +
       `👤 Username: ${user?.username}\n\n` +
       `I have made the payment. Please verify and activate my task.`;
-    openWhatsApp(message);
-    openTelegram(message);
+    setSupportMessage(message);
+setShowSupportModal(true);
     setSelectedTask(null);
     setSelectedTier(null);
   };
@@ -535,6 +537,69 @@ export default function TasksPage() {
           </div>
         </div>
       )}
+      
+
+
+      {showSupportModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+    
+    <div className="bg-white rounded-2xl p-6 w-[90%] max-w-sm shadow-2xl animate-in fade-in zoom-in-95">
+      
+      {/* Header */}
+      <div className="text-center mb-5">
+        <h2 className="text-lg font-bold text-gray-900">
+          Contact Support
+        </h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Choose your preferred platform
+        </p>
+      </div>
+
+      {/* Buttons */}
+      <div className="flex flex-col gap-3">
+        
+        {/* WhatsApp */}
+        <button
+          onClick={() => {
+            openWhatsApp(supportMessage);
+            setShowSupportModal(false);
+          }}
+          className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-medium transition-all shadow-sm hover:shadow-md"
+        >
+          <WhatsAppIcon />
+          Continue with WhatsApp
+        </button>
+
+        {/* Telegram */}
+        <button
+          onClick={() => {
+            openTelegram(supportMessage);
+            setShowSupportModal(false);
+          }}
+          className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition-all shadow-sm hover:shadow-md"
+        >
+          <TelegramIcon />
+          Continue with Telegram
+        </button>
+      </div>
+
+      {/* Divider */}
+      <div className="flex items-center gap-2 my-4">
+        <div className="flex-1 h-px bg-gray-200" />
+        <span className="text-xs text-gray-400">or</span>
+        <div className="flex-1 h-px bg-gray-200" />
+      </div>
+
+      {/* Cancel */}
+      <button
+        onClick={() => setShowSupportModal(false)}
+        className="w-full py-2 text-sm text-gray-500 hover:text-gray-700 transition"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+)}
     </MainLayout>
   );
 }

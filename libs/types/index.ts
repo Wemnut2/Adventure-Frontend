@@ -91,7 +91,7 @@ export interface Transaction {
   user_email: string;
   transaction_type: 'deposit' | 'withdrawal' | 'profit' | 'bonus';
   amount: number;
-  status: 'pending' | 'completed' | 'failed' | 'cancelled';
+  status: 'pending' | 'completed' | 'failed' | 'cancelled' | 'processing';
   reference: string;
   description?: string;
   admin_notes?: string;
