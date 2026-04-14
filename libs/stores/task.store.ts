@@ -19,15 +19,19 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   isLoading: false,
 
   fetchAvailableTasks: async () => {
+    
+
     set({ isLoading: true });
-    try {
-      const tasks = await taskService.getAvailableTasks();
-      set({ availableTasks: Array.isArray(tasks) ? tasks : [], isLoading: false });
-      return tasks;
-    } catch (error) {
-      set({ isLoading: false });
-      throw error;
-    }
+  try {
+    const tasks = await taskService.getAvailableTasks();
+    console.log('AVAILABLE TASKS:', tasks); 
+    set({ availableTasks: Array.isArray(tasks) ? tasks : [], isLoading: false });
+    return tasks;
+  } catch (error) {
+    console.error('Fetch available tasks error:', error);
+    set({ isLoading: false });
+    throw error;
+  }
   },
 
   fetchMyTasks: async () => {
@@ -89,4 +93,6 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       throw error;
     }
   },
+
+  
 }));

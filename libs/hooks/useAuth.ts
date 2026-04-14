@@ -50,8 +50,12 @@ export const useActivities = () => {
   const activities = useAuthStore((state) => state.activities);
   const isLoading = useAuthStore((state) => state.isLoading);
   useQuery({
-    queryKey: ['activities'],
-    queryFn: fetchActivities,
+      queryKey: ['activities'],
+    queryFn: async () => {
+      await fetchActivities();
+      return true; // ← must return something, not undefined
+    },
+    retry: false,
   });
   return { activities, isLoading };
 };
