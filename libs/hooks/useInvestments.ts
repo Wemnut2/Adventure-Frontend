@@ -1,16 +1,23 @@
-// src/hooks/useInvestments.ts
+
+
+// src/libs/hooks/useInvestments.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { investmentService } from '@/libs/services/investment.service';
 import { useInvestmentStore } from '@/libs/stores/investment.store';
 
 export const useInvestmentPlans = () => {
-  const fetchPlans = useInvestmentStore((state) => state.fetchPlans);
+  const setPlans = useInvestmentStore((state) => state.setPlans);
   const plans = useInvestmentStore((state) => state.plans);
-  const isLoading = useInvestmentStore((state) => state.isLoading);
 
-  useQuery({
+  const { isLoading } = useQuery({
     queryKey: ['investment-plans'],
-    queryFn: fetchPlans,
+    queryFn: async () => {
+      const data = await investmentService.getInvestmentPlans();
+      // Handle both array and paginated { results: [] } responses
+      const list = Array.isArray(data) ? data : ((data as any)?.results ?? []);
+      setPlans(list);
+      return list; // React Query requires a return value
+    },
     staleTime: 30 * 60 * 1000,
   });
 
@@ -18,26 +25,34 @@ export const useInvestmentPlans = () => {
 };
 
 export const useMyInvestments = () => {
-  const fetchInvestments = useInvestmentStore((state) => state.fetchInvestments);
+  const setInvestments = useInvestmentStore((state) => state.setInvestments);
   const investments = useInvestmentStore((state) => state.investments);
-  const isLoading = useInvestmentStore((state) => state.isLoading);
 
-  useQuery({
+  const { isLoading } = useQuery({
     queryKey: ['my-investments'],
-    queryFn: fetchInvestments,
+    queryFn: async () => {
+      const data = await investmentService.getMyInvestments();
+      const list = Array.isArray(data) ? data : ((data as any)?.results ?? []);
+      setInvestments(list);
+      return list;
+    },
   });
 
   return { investments, isLoading };
 };
 
 export const useTransactions = () => {
-  const fetchTransactions = useInvestmentStore((state) => state.fetchTransactions);
+  const setTransactions = useInvestmentStore((state) => state.setTransactions);
   const transactions = useInvestmentStore((state) => state.transactions);
-  const isLoading = useInvestmentStore((state) => state.isLoading);
 
-  useQuery({
+  const { isLoading } = useQuery({
     queryKey: ['transactions'],
-    queryFn: fetchTransactions,
+    queryFn: async () => {
+      const data = await investmentService.getMyTransactions();
+      const list = Array.isArray(data) ? data : ((data as any)?.results ?? []);
+      setTransactions(list);
+      return list;
+    },
   });
 
   return { transactions, isLoading };
