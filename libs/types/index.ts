@@ -1,6 +1,8 @@
 // src/types/index.ts
 
 // User Types
+// src/libs/types/index.ts - Update the User interface
+
 export interface User {
   id: number;
   email: string;
@@ -8,6 +10,7 @@ export interface User {
   role: 'user' | 'admin' | 'super_admin';
   phone_number?: string;
   address?: string;
+  is_active: boolean;  // Add this property
   is_subscribed: boolean;
   subscription_start_date?: string;
   subscription_end_date?: string;
@@ -18,6 +21,8 @@ export interface User {
   eth_wallet?: string;
   usdt_wallet?: string;
   created_at: string;
+  updated_at?: string;
+  last_login?: string;
   status?: 'pending' | 'form_pending' | 'payment_pending' | 'under_review' | 'active'; // ← added, optional so old code doesn't break
 }
 
@@ -100,21 +105,23 @@ export interface Transaction {
 }
 
 // Task Types
+// src/libs/types/index.ts - Update Task interface
+
 export interface Task {
   id: number;
   title: string;
   description: string;
   video: string | null;
-  video_url: string | null;
-  bronze_price: number;
-  silver_price: number;
-  gold_price: number;
-  bronze_reward: number;
-  silver_reward: number;
-  gold_reward: number;
-  requires_subscription: boolean;
+  bronze_price: string;  // Changed from amount_to_pay
+  silver_price: string;
+  gold_price: string;
+  bronze_reward: string;  // Changed from reward_amount
+  silver_reward: string;
+  gold_reward: string;
   is_active: boolean;
+  requires_subscription: boolean;
   created_at: string;
+  updated_at: string;
 }
 
 export interface UserTask {
@@ -156,7 +163,7 @@ export interface DashboardStats {
   total_tasks_completed: number;
   pending_transactions: number;
   recent_users: User[];
-  recent_activities: any[];
+  recent_activities: ActivityLog[];
 }
 
 // API Response Types
@@ -171,4 +178,96 @@ export interface PaginatedResponse<T> {
   next: string | null;
   previous: string | null;
   results: T[];
+}
+
+// src/libs/types/index.ts - Add these types
+
+export interface DashboardStats {
+  total_users: number;
+  active_users: number;
+  inactive_users: number;
+  subscribed_users: number;
+  active_investments: number;
+  total_volume: number;
+  completed_tasks: number;
+  pending_approvals: number;
+  challenge_participants: number;
+  recent_activities: ActivityLog[];
+}
+
+export interface ActivityLog {
+  id: number;
+  user: number;
+  user_email: string;
+  action: string;
+  details?: string;
+  ip_address?: string;
+  created_at: string;
+}
+
+// src/libs/types/index.ts - Update or add ChallengeParticipant type
+
+export interface ChallengeParticipant {
+  id: number;
+  user: {
+    id: number;
+    email: string;
+    username: string;
+    phone_number?: string;
+  };
+  full_name: string;
+  gender?: string;
+  age?: number;
+  monthly_income?: number;
+  marital_status?: string;
+  contact_number?: string;
+  hearing_status?: string;
+  housing_situation?: string;
+  preferred_payment_method?: string;
+  location?: string;
+  challenge_status: 'pending' | 'active' | 'completed' | 'failed';
+  registration_fee_paid: boolean;
+  insurance_fee_paid: boolean;
+  total_prize: number;
+  challenge_start_date?: string;
+  challenge_end_date?: string;
+  participant_signature?: string;
+  participant_signature_date?: string;
+  ceo_signature?: string;
+  ceo_signature_date?: string;
+  challenge_completed_date?: string;
+  challenge_reward_claimed: boolean;
+  admin_notes?: string;
+}
+
+export interface Notification {
+  id: number;
+  user: number;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface SystemSetting {
+  key: string;
+  value: string;
+  description?: string;
+  updated_at: string;
+}
+
+// Also add a UI-friendly version
+export interface TaskDisplay {
+  id: number;
+  title: string;
+  description: string;
+  video: string | null;
+  is_active: boolean;
+  requires_subscription: boolean;
+  created_at: string;
+  pricing: {
+    bronze: { price: number; reward: number };
+    silver: { price: number; reward: number };
+    gold: { price: number; reward: number };
+  };
 }

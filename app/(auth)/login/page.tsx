@@ -7,11 +7,13 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
+import { AxiosError } from 'axios';
 import { Button } from '@/layout/components/Button';
 import { Input } from '@/layout/components/Input';
 import { Card } from '@/layout/components/Card';
 import { useToast } from '@/libs/src/contexts/ToastContext';
 import { useLogin } from '@/libs/hooks/useAuth';
+import { useAuthStore } from '@/libs/stores/auth.store';
 import { loginSchema, LoginFormData } from '@/libs/src/schemas/auth.schema';
 
 export default function LoginPage() {
@@ -19,6 +21,7 @@ export default function LoginPage() {
   const { showToast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const loginMutation = useLogin();
+  const { user, isAuthenticated, loadUser } = useAuthStore();
 
   const {
     register,
@@ -32,29 +35,50 @@ export default function LoginPage() {
     },
   });
 
-  // Redirect if already authenticated
+  // Redirect based on role when authenticated
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      router.push('/dashboard');
-    }
-  }, [router]);
+    const redirectBasedOnRole = async () => {
+      if (isAuthenticated && user) {
+        // Redirect based on user role
+        if (user.role === 'admin' || user.role === 'super_admin') {
+          router.push('/admin');
+        } else {
+          router.push('/dashboard');
+        }
+      }
+    };
+
+    redirectBasedOnRole();
+  }, [isAuthenticated, user, router]);
+
+  // Check for existing token on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        await loadUser();
+      }
+    };
+    checkAuth();
+  }, [loadUser]);
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      await loginMutation.mutateAsync(data);
+      const response = await loginMutation.mutateAsync(data);
       showToast('Login successful! Redirecting...', 'success');
+      
+      // The auth store will update user and isAuthenticated
+      // The useEffect above will handle redirection based on role
+    } catch (error) {
+      const axiosError = error as AxiosError<{ detail: string }>;
+      console.error('Login error:', axiosError);
 
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 1000);
-    } catch (error: any) {
-      console.error('Login error:', error);
-
-      if (error.response?.status === 401) {
+      if (axiosError.response?.status === 401) {
         showToast('Invalid email or password. Please try again.', 'error');
-      } else if (error.response?.status === 400) {
+      } else if (axiosError.response?.status === 400) {
         showToast('Please check your credentials and try again.', 'error');
+      } else if (axiosError.response?.data?.detail) {
+        showToast(axiosError.response.data.detail, 'error');
       } else {
         showToast('Login failed. Please try again later.', 'error');
       }
@@ -106,7 +130,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-[38px] text-gray-500 hover:text-orange-500"
+              className="absolute right-3 top-[38px] text-gray-500 hover:text-orange-500 transition-colors"
             >
               {showPassword ? (
                 <EyeOff className="h-5 w-5" />
@@ -161,7 +185,7 @@ export default function LoginPage() {
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="bg-white px-2 text-gray-500">
-                Don't have an account?
+                Don&apos;t have an account?
               </span>
             </div>
           </div>
@@ -179,6 +203,15 @@ export default function LoginPage() {
             </Button>
           </Link>
         </form>
+
+        {/* Demo Credentials (Optional - remove in production) */}
+        <div className="mt-6 p-4 bg-orange-50 rounded-lg">
+          <p className="text-xs font-semibold text-orange-800 mb-2">Demo Credentials:</p>
+          <div className="space-y-1 text-xs text-orange-700">
+            <p>👤 User: user@example.com / password123</p>
+            <p>👑 Admin: admin@example.com / admin123</p>
+          </div>
+        </div>
 
         {/* Footer */}
         <div className="mt-6 text-center text-xs text-gray-500">

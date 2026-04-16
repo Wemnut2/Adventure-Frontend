@@ -338,7 +338,7 @@ const menuItems = [
 ];
 
 const adminMenuItems = [
-  { href: '/admin/dashboard', label: 'Admin Dashboard', icon: Users },
+  // { href: '/admin/dashboard', label: 'Admin Dashboard', icon: Users },
   { href: '/admin/users', label: 'Manage Users', icon: Users },
   { href: '/admin/tasks', label: 'Manage Challenges', icon: CheckSquare },
   { href: '/admin/transactions', label: 'Transactions', icon: CreditCard },
