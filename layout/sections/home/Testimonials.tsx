@@ -7,26 +7,26 @@ import { Star } from "lucide-react";
 const testimonials = [
   {
     quote:
-      "I lasted 14 days. The first 3 were brutal, but what I learned about myself is priceless.",
-    name: "Sarah Chen",
-    duration: "14 Days",
-    reward: "$25,000",
+      "I lasted 30 days. The first 3 were brutal, but what I learned about myself is priceless.",
+    name: "Billy Pitman",
+    duration: "30 Days",
+    reward: "$1,000,000",
     proofImage: "/photo_2026-04-09_23-45-16.jpg",
   },
   {
     quote:
       "This challenge rewired my brain. I stopped needing constant stimulation.",
     name: "Marcus Williams",
-    duration: "21 Days",
-    reward: "$35,000",
+    duration: "60 Days",
+    reward: "$3,000,000",
     proofImage: "/photo_2026-04-09_23-45-46.jpg",
   },
   {
     quote:
       "Professional athletes train their bodies. This trains your mind.",
-    name: "Dr. Emily Rhodes",
+    name: "Donnie Leviner",
     duration: "Completed 30 Days",
-    reward: "$60,000",
+    reward: "$1,000,000",
     proofImage: "/photo_2026-04-09_23-45-40.jpg",
   },
 ];

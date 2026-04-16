@@ -1,6 +1,17 @@
-// src/services/auth.service.ts
 import { apiService } from './api';
-import { AuthResponse, LoginCredentials, RegisterData, User, ActivityLog } from '@/libs/types';
+import {
+  AuthResponse,
+  LoginCredentials,
+  RegisterData,
+  User,
+  ActivityLog
+} from '@/libs/types';
+
+type SubscriptionStatus = {
+  is_subscribed: boolean;
+  subscription_end_date: string | null;
+  subscription_active: boolean;
+};
 
 class AuthService {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
@@ -37,14 +48,25 @@ class AuthService {
     return response.data;
   }
 
-  async checkSubscription(): Promise<{
-    is_subscribed: boolean;
-    subscription_end_date: string | null;
-    subscription_active: boolean;
-  }> {
+  async checkSubscription(): Promise<SubscriptionStatus> {
     const response = await apiService.get('/auth/check-subscription/');
     return response.data;
   }
+
+  async changePassword(data: {
+  old_password: string;
+  new_password: string;
+}): Promise<{ message: string }> {
+  const response = await apiService.post<{ message: string }>(
+    '/auth/change-password/',
+    {
+      ...data,
+      confirm_password: data.new_password, // ✅ ADD THIS
+    }
+  );
+
+  return response.data;
+}
 }
 
 export const authService = new AuthService();

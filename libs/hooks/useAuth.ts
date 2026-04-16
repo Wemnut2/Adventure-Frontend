@@ -1,12 +1,14 @@
 // src/libs/hooks/useAuth.ts
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '@/libs/stores/auth.store';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authService } from '@/libs/services/auth.service';
-import { RegisterData } from '@/libs/types';
+import { useAuthStore } from '@/libs/stores/auth.store';
+
+/* ================= AUTH ================= */
 
 export const useLogin = () => {
   const login = useAuthStore((state) => state.login);
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: ({ email, password }: { email: string; password: string }) =>
       login(email, password),
@@ -16,16 +18,10 @@ export const useLogin = () => {
   });
 };
 
-export const useRegister = () => {
-  const register = useAuthStore((state) => state.register);
-  return useMutation({
-    mutationFn: (data: RegisterData) => register(data),
-  });
-};
-
 export const useLogout = () => {
   const logout = useAuthStore((state) => state.logout);
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: () => logout(),
     onSuccess: () => {
@@ -34,39 +30,78 @@ export const useLogout = () => {
   });
 };
 
+export const useRegister = () => {
+  return useMutation({
+    mutationFn: (data: Parameters<typeof authService.register>[0]) =>
+      authService.register(data),
+  });
+};
+
+/* ================= USER ================= */
+
 export const useUserProfile = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
   return useQuery({
     queryKey: ['user'],
     queryFn: () => authService.getProfile(),
-    staleTime: 5 * 60 * 1000,
     enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000,
     retry: false,
   });
 };
+
+export const useUpdateProfile = () => {
+  const updateUser = useAuthStore((state) => state.updateUser);
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: Parameters<typeof updateUser>[0]) => updateUser(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+      queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
+    },
+  });
+};
+
+/* ================= PASSWORD ================= */
+
+export const useChangePassword = () => {
+  return useMutation({
+    mutationFn: (data: { old_password: string; new_password: string }) =>
+      authService.changePassword(data),
+  });
+};
+
+/* ================= ACTIVITIES ================= */
 
 export const useActivities = () => {
   const fetchActivities = useAuthStore((state) => state.fetchActivities);
   const activities = useAuthStore((state) => state.activities);
   const isLoading = useAuthStore((state) => state.isLoading);
+
   useQuery({
-      queryKey: ['activities'],
+    queryKey: ['activities'],
     queryFn: async () => {
       await fetchActivities();
-      return true; // ← must return something, not undefined
+      return true;
     },
     retry: false,
   });
+
   return { activities, isLoading };
 };
 
+/* ================= SUBSCRIPTION ================= */
+
 export const useSubscriptionStatus = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
   return useQuery({
-    queryKey: ['subscription'],
+    queryKey: ['subscription-status'],
     queryFn: () => authService.checkSubscription(),
-    staleTime: 5 * 60 * 1000,
     enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000,
     retry: false,
   });
 };

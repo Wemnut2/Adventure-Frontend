@@ -1,18 +1,29 @@
 'use client';
+
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
-// import AccessGate from '@/layout/AccessGate';
 import { MessageCircle, X, Phone, Mail } from 'lucide-react';
 import { openWhatsApp, openTelegram, whatsAppMessages } from '@/libs/utils/whatsapp';
 import { useAuthStore } from '@/libs/stores/auth.store';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const user = useAuthStore((state) => state.user);
   const supportRef = useRef<HTMLDivElement>(null);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
+  // Authentication check
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, router]);
+
+  // Handle click outside support panel
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (supportRef.current && !supportRef.current.contains(e.target as Node)) {
@@ -24,6 +35,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [supportOpen]);
+
+  // Don't render anything if not authenticated
+  if (!isAuthenticated) return null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -46,7 +60,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </p>
 
             <div className="space-y-2">
-
               {/* WhatsApp General */}
               <button
                 onClick={() => openWhatsApp(whatsAppMessages.support)}
@@ -108,7 +121,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                   <p className="text-xs text-gray-400">Problems with payment</p>
                 </div>
               </button>
-
             </div>
 
             <p className="text-xs text-gray-300 text-center mt-3">
@@ -130,7 +142,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             <span className="text-sm font-medium pr-1">Support</span>
           )}
         </button>
-
       </div>
     </div>
   );
