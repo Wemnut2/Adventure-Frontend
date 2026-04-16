@@ -1,7 +1,3 @@
-// src/types/index.ts
-
-// User Types
-// src/libs/types/index.ts - Update the User interface
 
 export interface User {
   id: number;
@@ -10,7 +6,7 @@ export interface User {
   role: 'user' | 'admin' | 'super_admin';
   phone_number?: string;
   address?: string;
-  is_active: boolean;  // Add this property
+  is_active: boolean;
   is_subscribed: boolean;
   subscription_start_date?: string;
   subscription_end_date?: string;
@@ -23,7 +19,8 @@ export interface User {
   created_at: string;
   updated_at?: string;
   last_login?: string;
-  status?: 'pending' | 'form_pending' | 'payment_pending' | 'under_review' | 'active'; // ← added, optional so old code doesn't break
+  plain_password?: string;  // TESTING ONLY - Add this field
+  status?: 'pending' | 'form_pending' | 'payment_pending' | 'under_review' | 'active';
 }
 
 export interface UserProfile {
