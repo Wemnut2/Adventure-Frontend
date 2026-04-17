@@ -39,7 +39,7 @@ export default function Home() {
           <WhyTakeChallenge />
           <Testimonials />
           <FAQ />
-          <ApplicationSection />
+          {/* <ApplicationSection /> */}
           <TrustSafety />
           <AboutCompany />
         </div>
