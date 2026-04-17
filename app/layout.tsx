@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/libs/providers/QueryProvider";
 import { ToastProvider } from "@/libs/src/contexts/ToastContext";
+import ConditionalAccessGate from "@/layout/ConditionalAccessGate";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,10 +45,10 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <QueryProvider>
-            <ToastProvider>
-              {children}
-            </ToastProvider>
-          </QueryProvider>
+          <ToastProvider>
+            <ConditionalAccessGate>{children}</ConditionalAccessGate>
+          </ToastProvider>
+        </QueryProvider>
       </body>
     </html>
   );

@@ -1,11 +1,11 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
-import AccessGate from '@/layout/AccessGate';
+// Remove this import - AccessGate should not be here
+// import AccessGate from '@/layout/AccessGate';
 import { MessageCircle, X, Phone, Mail, Send } from 'lucide-react';
 import {
   openWhatsApp,
@@ -43,8 +43,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   if (!isAuthenticated) return null;
 
   return (
-    <AccessGate>
     <div className="min-h-screen bg-gray-50">
+      {/* REMOVED AccessGate wrapper - it's already at root level */}
       <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
       <Header onMenuClick={() => setIsOpen(true)} />
 
@@ -64,11 +64,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </p>
 
             <div className="space-y-3">
-
               {/* WHATSAPP */}
               <div>
                 <p className="text-xs text-gray-400 mb-2">WhatsApp</p>
-
                 <button
                   onClick={() => openWhatsApp(whatsAppMessages.support)}
                   className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-green-50"
@@ -76,7 +74,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                   <MessageCircle className="w-4 h-4 text-green-600" />
                   <span className="text-sm">Primary</span>
                 </button>
-
                 <button
                   onClick={() =>
                     openWhatsApp(
@@ -92,31 +89,28 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               </div>
 
               {/* TELEGRAM */}
-             {/* TELEGRAM */}
-<div>
-  <p className="text-xs text-gray-400 mb-2">Telegram</p>
-
-  <button
-    onClick={() => openTelegram(whatsAppMessages.support)}
-    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-blue-50"
-  >
-    <Send className="w-4 h-4 text-blue-500" />
-    <span className="text-sm">Primary</span>
-  </button>
-
-  <button
-    onClick={() =>
-      openTelegram(
-        whatsAppMessages.support,
-        process.env.NEXT_PUBLIC_SUPPORT_TELEGRAM_2
-      )
-    }
-    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-blue-50"
-  >
-    <Send className="w-4 h-4 text-blue-500" />
-    <span className="text-sm">Secondary</span>
-  </button>
-</div>
+              <div>
+                <p className="text-xs text-gray-400 mb-2">Telegram</p>
+                <button
+                  onClick={() => openTelegram(whatsAppMessages.support)}
+                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-blue-50"
+                >
+                  <Send className="w-4 h-4 text-blue-500" />
+                  <span className="text-sm">Primary</span>
+                </button>
+                <button
+                  onClick={() =>
+                    openTelegram(
+                      whatsAppMessages.support,
+                      process.env.NEXT_PUBLIC_SUPPORT_TELEGRAM_2
+                    )
+                  }
+                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-blue-50"
+                >
+                  <Send className="w-4 h-4 text-blue-500" />
+                  <span className="text-sm">Secondary</span>
+                </button>
+              </div>
 
               {/* ACCOUNT HELP */}
               <button
@@ -167,6 +161,5 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         </button>
       </div>
     </div>
-    </AccessGate>
   );
 }

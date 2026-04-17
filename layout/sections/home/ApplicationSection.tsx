@@ -323,7 +323,7 @@ function ContactSupportButton({
   );
 }
 
-export default function ApplicationSection() {
+export default function ApplicationSection({ skipProfileCheck = false }: { skipProfileCheck?: boolean }) {
   const [formData, setFormData] = useState<FormData>({
     fullName: "", address: "", gender: "", age: "", monthlyIncome: "",
     maritalStatus: "", contactNumber: "", email: "", hearingStatus: "",
@@ -348,6 +348,12 @@ export default function ApplicationSection() {
   // Check if user already has an application
   useEffect(() => {
     const checkExistingApplication = async () => {
+      // If skipProfileCheck is true, don't check for existing application
+      if (skipProfileCheck) {
+        setInitialLoading(false);
+        return;
+      }
+      
       if (!user) {
         setInitialLoading(false);
         return;
@@ -357,24 +363,22 @@ export default function ApplicationSection() {
         const response = await apiService.get("/auth/profile/");
         const profile = response.data;
         
-        // Check if user has already registered for a challenge
-      const hasFilledForm = !!profile.full_name;
-const hasPaid =
-  profile.registration_fee_paid && profile.insurance_fee_paid;
+        console.log('Profile data in ApplicationSection:', profile); // Debug log
+        
+        const hasFilledForm = !!profile.full_name;
+        const hasPaid = profile.registration_fee_paid && profile.insurance_fee_paid;
 
+        if (hasFilledForm) {
+          setHasExistingApplication(true);
+          setExistingProfile(profile);
 
-  if (hasFilledForm) {
-  setHasExistingApplication(true);
-  setExistingProfile(profile);
+          if (hasPaid) {
+            router.push("/dashboard");
+            return;
+          }
 
-  if (hasPaid) {
-    router.push("/dashboard"); // ✅ GO DIRECTLY
-    return;
-  }
-
-  // Form filled but NOT paid
-  setSubmitted(true);
-}
+          setSubmitted(true);
+        }
       } catch (error) {
         console.error("Error checking application:", error);
       } finally {
@@ -383,7 +387,7 @@ const hasPaid =
     };
 
     checkExistingApplication();
-  }, [user]);
+  }, [user, skipProfileCheck]); 
 
   const validateForm = (): boolean => {
     const errors: FormErrors = {};
