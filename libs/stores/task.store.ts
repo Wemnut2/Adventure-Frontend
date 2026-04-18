@@ -1,4 +1,3 @@
-// src/libs/stores/task.store.ts
 import { create } from 'zustand';
 import { Task, UserTask } from '@/libs/types';
 import { taskService } from '@/libs/services/task.service';
@@ -7,6 +6,7 @@ interface TaskState {
   availableTasks: Task[];
   myTasks: UserTask[];
   isLoading: boolean;
+  isStartingTask: boolean;
   fetchAvailableTasks: () => Promise<Task[]>;
   fetchMyTasks: () => Promise<UserTask[]>;
   startTask: (taskId: number, tier: 'bronze' | 'silver' | 'gold') => Promise<any>;
@@ -18,60 +18,55 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   availableTasks: [],
   myTasks: [],
   isLoading: false,
+  isStartingTask: false,
 
   fetchAvailableTasks: async () => {
-    set({ isLoading: true });
     try {
       const tasks = await taskService.getAvailableTasks();
-      set({ availableTasks: Array.isArray(tasks) ? tasks : [], isLoading: false });
+      set({ availableTasks: Array.isArray(tasks) ? tasks : [] });
       return tasks;
     } catch (error) {
-      set({ isLoading: false });
       throw error;
     }
   },
 
   fetchMyTasks: async () => {
-    set({ isLoading: true });
     try {
       const tasks = await taskService.getMyTasks();
-      set({ myTasks: Array.isArray(tasks) ? tasks : [], isLoading: false });
+      set({ myTasks: Array.isArray(tasks) ? tasks : [] });
       return tasks;
     } catch (error) {
-      set({ isLoading: false });
       throw error;
     }
   },
 
   startTask: async (taskId, tier) => {
-    set({ isLoading: true });
+    set({ isStartingTask: true });
     try {
       const res = await taskService.startTask(taskId, tier);
-      // Refresh both lists after starting
-      await get().fetchMyTasks();
-      await get().fetchAvailableTasks();
-      set({ isLoading: false });
+      // Refresh lists in background — don't block return
+      get().fetchMyTasks();
+      get().fetchAvailableTasks();
       return res;
     } catch (error) {
-      set({ isLoading: false });
       throw error;
+    } finally {
+      set({ isStartingTask: false });
     }
   },
 
-  // Store receives raw File — service builds FormData internally
   uploadPayment: async (userTaskId, file) => {
     set({ isLoading: true });
     try {
       await taskService.uploadPayment(userTaskId, file);
       await get().fetchMyTasks();
-      set({ isLoading: false });
     } catch (error) {
-      set({ isLoading: false });
       throw error;
+    } finally {
+      set({ isLoading: false });
     }
   },
 
-  // Store receives raw File — service builds FormData internally
   completeTask: async (userTaskId, file) => {
     set({ isLoading: true });
     try {
@@ -82,10 +77,10 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       await taskService.completeTask(userTaskId, file);
       await get().fetchMyTasks();
       await get().fetchAvailableTasks();
-      set({ isLoading: false });
     } catch (error) {
-      set({ isLoading: false });
       throw error;
+    } finally {
+      set({ isLoading: false });
     }
   },
 }));

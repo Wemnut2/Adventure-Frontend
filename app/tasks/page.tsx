@@ -5,7 +5,7 @@ import { MainLayout } from '@/layout/sections/dashboard/MainLayout';
 import { useTaskStore } from '@/libs/stores/task.store';
 import { useAuthStore } from '@/libs/stores/auth.store';
 import { formatCurrency } from '@/libs/utils/format';
-import { openWhatsApp, openTelegram } from '@/libs/utils/whatsapp';
+import { openWhatsApp, openWhatsAppSecondary, openTelegram, openTelegramSecondary } from '@/libs/utils/whatsapp';
 import { Task, UserTask } from '@/libs/types';
 import {
   Play, X, CheckCircle, Clock, AlertCircle,
@@ -153,6 +153,7 @@ export default function TasksPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [showSupportModal, setShowSupportModal] = useState(false);
 const [supportMessage, setSupportMessage] = useState("");
+const [isStartingTask, setIsStartingTask] = useState(false);
 
   useEffect(() => {
     fetchAvailableTasks();
@@ -165,8 +166,11 @@ const [supportMessage, setSupportMessage] = useState("");
     setStep('detail');
   };
 
-  const handleProceedToWhatsApp = () => {
-    if (!selectedTask || !selectedTier) return;
+ const handleProceedToWhatsApp = async () => {
+  if (!selectedTask || !selectedTier) return;
+  setIsStartingTask(true);
+  try {
+    const userTask = await useTaskStore.getState().startTask(selectedTask.id, selectedTier.id);
     const price = formatCurrency(Number(selectedTier.getPrice(selectedTask)));
     const reward = formatCurrency(Number(selectedTier.getReward(selectedTask)));
     const message =
@@ -176,14 +180,20 @@ const [supportMessage, setSupportMessage] = useState("");
       `💰 Payment: ${price}\n` +
       `🎁 Expected Reward: ${reward}\n` +
       `👤 Email: ${user?.email}\n` +
-      `👤 Username: ${user?.username}\n\n` +
-      `I have made the payment. Please verify and activate my task.`;
+      `👤 Username: ${user?.username}\n` +
+      `🆔 Task Ref: #${userTask.id}\n\n` +
+      `Please send payment details to activate my task.`;
     setSupportMessage(message);
-setShowSupportModal(true);
+    setShowSupportModal(true);
     setSelectedTask(null);
     setSelectedTier(null);
-  };
-
+    fetchMyTasks();
+  } catch (err: any) {
+    alert(err?.response?.data?.error || 'Could not start task. Please try again.');
+  } finally {
+    setIsStartingTask(false);
+  }
+};
   const handleUploadPayment = async (userTaskId: number) => {
     if (!uploadFile) return;
     setUploading(true);
@@ -505,14 +515,17 @@ setShowSupportModal(true);
                       Back
                     </button>
                     <button
-                      onClick={handleProceedToWhatsApp}
-                      disabled={!selectedTier}
-                      className="flex-1 py-3 bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors"
-                    >
-                      <WhatsAppIcon />
-                      <TelegramIcon />
-                      Contact Support
-                    </button>
+  onClick={handleProceedToWhatsApp}
+  disabled={!selectedTier || isStartingTask}
+  className="flex-1 py-3 bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors"
+>
+  {isStartingTask ? (
+    <RefreshCw className="w-4 h-4 animate-spin" />
+  ) : (
+    <><WhatsAppIcon /><TelegramIcon /></>
+  )}
+  {isStartingTask ? 'Starting...' : 'Contact Support'}
+</button>
                   </div>
                 </div>
               )}
@@ -540,57 +553,50 @@ setShowSupportModal(true);
       
 
 
-      {showSupportModal && (
+
+{showSupportModal && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-    
-    <div className="bg-white rounded-2xl p-6 w-[90%] max-w-sm shadow-2xl animate-in fade-in zoom-in-95">
-      
-      {/* Header */}
+    <div className="bg-white rounded-2xl p-6 w-[90%] max-w-sm shadow-2xl">
       <div className="text-center mb-5">
-        <h2 className="text-lg font-bold text-gray-900">
-          Contact Support
-        </h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Choose your preferred platform
-        </p>
+        <h2 className="text-lg font-bold text-gray-900">Contact Support</h2>
+        <p className="text-sm text-gray-500 mt-1">Choose your preferred platform</p>
       </div>
 
-      {/* Buttons */}
       <div className="flex flex-col gap-3">
-        
-        {/* WhatsApp */}
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">WhatsApp</p>
         <button
-          onClick={() => {
-            openWhatsApp(supportMessage);
-            setShowSupportModal(false);
-          }}
+          onClick={() => { openWhatsApp(supportMessage); setShowSupportModal(false); }}
           className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-medium transition-all shadow-sm hover:shadow-md"
         >
-          <WhatsAppIcon />
-          Continue with WhatsApp
+          <WhatsAppIcon /> WhatsApp Support 1
+        </button>
+        <button
+          onClick={() => { openWhatsAppSecondary(supportMessage); setShowSupportModal(false); }}
+          className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-medium transition-all shadow-sm hover:shadow-md"
+        >
+          <WhatsAppIcon /> WhatsApp Support 2
         </button>
 
-        {/* Telegram */}
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mt-1">Telegram</p>
         <button
-          onClick={() => {
-            openTelegram(supportMessage);
-            setShowSupportModal(false);
-          }}
+          onClick={() => { openTelegram(supportMessage); setShowSupportModal(false); }}
           className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition-all shadow-sm hover:shadow-md"
         >
-          <TelegramIcon />
-          Continue with Telegram
+          <TelegramIcon /> Telegram Support 1
+        </button>
+        <button
+          onClick={() => { openTelegramSecondary(supportMessage); setShowSupportModal(false); }}
+          className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-medium transition-all shadow-sm hover:shadow-md"
+        >
+          <TelegramIcon /> Telegram Support 2
         </button>
       </div>
 
-      {/* Divider */}
       <div className="flex items-center gap-2 my-4">
         <div className="flex-1 h-px bg-gray-200" />
         <span className="text-xs text-gray-400">or</span>
         <div className="flex-1 h-px bg-gray-200" />
       </div>
-
-      {/* Cancel */}
       <button
         onClick={() => setShowSupportModal(false)}
         className="w-full py-2 text-sm text-gray-500 hover:text-gray-700 transition"
