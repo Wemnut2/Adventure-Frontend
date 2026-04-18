@@ -378,7 +378,7 @@ export default function RegisterPage() {
               <input
                 className={`field-input${errors.phone_number ? ' has-error' : ''}`}
                 type="tel"
-                placeholder="+234..."
+                placeholder="+1(546)..."
                 {...register('phone_number')}
               />
             </div>

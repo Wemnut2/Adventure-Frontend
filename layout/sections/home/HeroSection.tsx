@@ -233,11 +233,11 @@ export default function HeroSection() {
                 animationFillMode: 'forwards'
               }}
             >
-              <Link href="#apply" className="btn-primary">
+              <Link href="apply" className="btn-primary">
                 Apply Now
                 <ArrowRight size={16} />
               </Link>
-              <Link href="#about" className="btn-secondary">
+              <Link href="about" className="btn-secondary">
                 Learn More
               </Link>
             </div>
