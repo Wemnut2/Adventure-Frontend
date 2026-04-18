@@ -165,6 +165,41 @@ async getAllUsers(): Promise<User[]> {
     }
 }
 
+async getNotifications(): Promise<any[]> {
+    try {
+      const response = await apiService.get('/admin/notifications/');
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      return [];
+    }
+  }
+
+  async markNotificationRead(id: number): Promise<any> {
+    const response = await apiService.post(`/admin/notifications/${id}/mark-read/`);
+    return response.data;
+  }
+  async rejectInvestment(id: number, reason: string): Promise<{ status: string }> {
+    const response = await apiService.post(`/admin/investments/${id}/reject/`, { reason });
+    return response.data;
+  }
+
+  // Withdrawal Management
+  async getWithdrawalRequests(): Promise<any[]> {
+    try {
+      const response = await apiService.get('/admin/withdrawals/');
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.error('Error fetching withdrawals:', error);
+      return [];
+    }
+  }
+
+  async approveWithdrawal(id: number): Promise<{ status: string }> {
+    const response = await apiService.post(`/admin/withdrawals/${id}/approve/`);
+    return response.data;
+  }
+
   async approveInvestment(id: number): Promise<{ status: string }> {
     const response = await apiService.post<{ status: string }>(
       `/admin/investments/${id}/approve_investment/`

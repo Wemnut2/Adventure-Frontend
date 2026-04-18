@@ -1,220 +1,243 @@
 // src/app/(dashboard)/investments/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/layout/sections/dashboard/MainLayout';
-import { useInvestmentPlans, useMyInvestments, useTransactions, useCreateInvestment } from '@/libs/hooks/useInvestments';
+import { Card } from '@/layout/components/Card';
+import { Button } from '@/layout/components/Button';
+import { Input } from '@/layout/components/Input';
+import { useInvestmentStore } from '@/libs/stores/investment.store';
+import { useAuthStore } from '@/libs/stores/auth.store';
+import { useToast } from '@/libs/src/contexts/ToastContext';
 import { formatCurrency } from '@/libs/utils/format';
-import { ArrowUp, X, TrendingUp, DollarSign } from 'lucide-react';
-import { InvestmentPlan } from '@/libs/types';
-import { DASH_STYLES } from '@/app/styles/dashboardStyles';
+import { TrendingUp, DollarSign, Calendar, Shield, Loader2, ArrowRight } from 'lucide-react';
 
-/* ─── Invest Modal ── */
-function InvestModal({ plan, onClose, onSuccess }: { plan: InvestmentPlan; onClose: () => void; onSuccess: () => void }) {
-  const [amount, setAmount] = useState(String(plan.min_amount));
-  const createInvestment    = useCreateInvestment();
+export default function InvestmentsPage() {
+  const { user } = useAuthStore();
+  const { plans, investments, fetchPlans, fetchInvestments, createInvestment, isLoading } = useInvestmentStore();
+  const { showToast } = useToast();
+  const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const [amount, setAmount] = useState('');
+  const [showModal, setShowModal] = useState(false);
 
-  const num      = parseFloat(amount) || 0;
-  const min      = Number(plan.min_amount);
-  const max      = plan.max_amount ? Number(plan.max_amount) : Infinity;
-  const isValid  = num >= min && num <= max;
-  const expected = isValid ? num * (1 + Number(plan.roi) / 100) : null;
+  useEffect(() => {
+    fetchPlans();
+    fetchInvestments();
+  }, []);
 
-  const handleSubmit = () => {
-    if (!isValid) return;
-    createInvestment.mutate({ planId: plan.id, amount: num }, {
-      onSuccess: () => { onSuccess(); onClose(); }
-    });
+  const handleInvest = async () => {
+    if (!selectedPlan || !amount) {
+      showToast('Please select a plan and enter amount', 'error');
+      return;
+    }
+
+    const numAmount = parseFloat(amount);
+    if (numAmount < selectedPlan.min_amount) {
+      showToast(`Minimum investment is ${formatCurrency(selectedPlan.min_amount)}`, 'error');
+      return;
+    }
+    if (selectedPlan.max_amount && numAmount > selectedPlan.max_amount) {
+      showToast(`Maximum investment is ${formatCurrency(selectedPlan.max_amount)}`, 'error');
+      return;
+    }
+
+    try {
+      await createInvestment(selectedPlan.id, numAmount);
+      showToast('Investment request submitted! Admin will review it.', 'success');
+      setShowModal(false);
+      setAmount('');
+      setSelectedPlan(null);
+    } catch (error: any) {
+      showToast(error?.response?.data?.message || 'Investment failed', 'error');
+    }
   };
 
-  return (
-    <div className="ds-modal-overlay" onClick={onClose}>
-      <div className="ds-modal" onClick={e => e.stopPropagation()}>
-        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:16 }}>
-          <div>
-            <p className="ds-modal-title">Invest in {plan.name}</p>
-            <p className="ds-modal-sub">Review the plan and confirm your amount</p>
-          </div>
-          <button className="ds-icon-btn" onClick={onClose}><X size={15} /></button>
-        </div>
+  const totalInvested = investments.reduce((sum, inv) => sum + inv.amount, 0);
+  const totalProfit = investments.reduce((sum, inv) => sum + inv.total_profit, 0);
+  const activeInvestments = investments.filter(inv => inv.status === 'active').length;
 
-        {/* Plan summary strip */}
-        <div className="ds-fee-strip" style={{ marginBottom:18 }}>
-          {[
-            ['Min. amount', formatCurrency(min)],
-            ['ROI',         `${plan.roi}%`],
-            ['Duration',    `${plan.duration_days} days`],
-          ].map(([l,v]) => (
-            <div className="ds-fee-row" key={l}>
-              <span style={{ color:'#aaa' }}>{l}</span>
-              <span style={{ fontWeight:500 }}>{v}</span>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ marginBottom:18 }}>
-          <label className="ds-input-label">Amount to invest</label>
-          <input type="number" className="ds-input" value={amount} min={min} max={plan.max_amount ? max : undefined}
-            onChange={e => setAmount(e.target.value)} placeholder="Enter amount" />
-          {amount && !isValid ? (
-            <p className="ds-input-error">{num < min ? `Minimum is ${formatCurrency(min)}` : `Maximum is ${formatCurrency(max)}`}</p>
-          ) : expected ? (
-            <p style={{ fontSize:11.5, color:'#16a34a', marginTop:4 }}>Expected return: {formatCurrency(expected)}</p>
-          ) : null}
-        </div>
-
-        <div className="ds-modal-actions">
-          <button className="ds-btn-ghost" onClick={onClose}>Cancel</button>
-          <button className="ds-btn-primary" disabled={!isValid || createInvestment.isPending} onClick={handleSubmit}>
-            {createInvestment.isPending ? 'Processing…' : 'Confirm Investment'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Main ── */
-type Tab = 'plans' | 'my' | 'transactions';
-
-export default function InvestmentPage() {
-  const [activeTab, setActiveTab]     = useState<Tab>('plans');
-  const [selectedPlan, setSelectedPlan] = useState<InvestmentPlan | null>(null);
-
-  const { plans,        isLoading: plansLoading }        = useInvestmentPlans();
-  const { investments,  isLoading: investmentsLoading }  = useMyInvestments();
-  const { transactions, isLoading: transactionsLoading } = useTransactions();
-
-  const tabs: { key: Tab; label: string }[] = [
-    { key: 'plans',        label: 'Plans' },
-    { key: 'my',           label: `My Investments${(investments ?? []).length > 0 ? ` (${investments!.length})` : ''}` },
-    { key: 'transactions', label: 'Transactions' },
-  ];
-
-  function Spinner() {
+  if (isLoading) {
     return (
-      <div className="ds-spinner-page">
-        <svg className="ds-spinner" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-      </div>
-    );
-  }
-
-  function Empty({ msg }: { msg: string }) {
-    return (
-      <div className="ds-empty">
-        <div className="ds-empty-icon"><TrendingUp size={18} /></div>
-        <p className="ds-empty-title">{msg}</p>
-      </div>
+      <MainLayout>
+        <div className="flex items-center justify-center h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+        </div>
+      </MainLayout>
     );
   }
 
   return (
     <MainLayout>
-      <div className="ds ds-page ds-fade-up" style={{ maxWidth:900 }}>
-        <style>{DASH_STYLES}</style>
-
+      <div className="space-y-6">
+        {/* Header */}
         <div>
-          <h1 className="ds-page-title">Investments</h1>
-          <p className="ds-page-subtitle">Grow your money with smart plans</p>
+          <h1 className="text-2xl font-bold text-gray-900">Investments</h1>
+          <p className="text-sm text-gray-500 mt-1">Grow your wealth with our investment plans</p>
         </div>
 
-        <div className="ds-tabs">
-          {tabs.map(t => (
-            <button key={t.key} className={`ds-tab ${activeTab === t.key ? 'active' : ''}`} onClick={() => setActiveTab(t.key)}>
-              {t.label}
-            </button>
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Total Invested</p>
+                <p className="text-2xl font-bold text-orange-600">{formatCurrency(totalInvested)}</p>
+              </div>
+              <DollarSign className="h-8 w-8 text-orange-200" />
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Total Profit</p>
+                <p className="text-2xl font-bold text-green-600">{formatCurrency(totalProfit)}</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-green-200" />
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Active Investments</p>
+                <p className="text-2xl font-bold text-blue-600">{activeInvestments}</p>
+              </div>
+              <Shield className="h-8 w-8 text-blue-200" />
+            </div>
+          </Card>
+        </div>
+
+        {/* Investment Plans */}
+        <h2 className="text-xl font-semibold mt-8">Available Investment Plans</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {plans.map((plan) => (
+            <Card key={plan.id} className="p-6 hover:shadow-lg transition-all">
+              <div className="text-center mb-4">
+                <div className="w-16 h-16 mx-auto bg-orange-100 rounded-full flex items-center justify-center mb-3">
+                  <TrendingUp className="h-8 w-8 text-orange-600" />
+                </div>
+                <h3 className="text-xl font-bold">{plan.name}</h3>
+                <p className="text-sm text-gray-500 mt-1">{plan.description}</p>
+              </div>
+              
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Daily Return</span>
+                  <span className="font-semibold text-green-600">{plan.daily_interest_rate}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Duration</span>
+                  <span className="font-semibold">{plan.duration_days} days</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Min Investment</span>
+                  <span className="font-semibold">{formatCurrency(plan.min_amount)}</span>
+                </div>
+                {plan.max_amount && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Max Investment</span>
+                    <span className="font-semibold">{formatCurrency(plan.max_amount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between pt-2 border-t">
+                  <span className="text-gray-600">Total Return</span>
+                  <span className="font-semibold text-orange-600">
+                    {formatCurrency(plan.min_amount + (plan.min_amount * plan.daily_interest_rate / 100 * plan.duration_days))}+
+                  </span>
+                </div>
+              </div>
+              
+              <Button 
+                onClick={() => {
+                  setSelectedPlan(plan);
+                  setShowModal(true);
+                }}
+                fullWidth
+                className="bg-gradient-to-r from-orange-500 to-orange-600"
+              >
+                Invest Now <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Card>
           ))}
         </div>
 
-        {/* Plans */}
-        {activeTab === 'plans' && (
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:14 }}>
-            {plansLoading ? <Spinner /> :
-             (plans ?? []).length === 0 ? <Empty msg="No investment plans available." /> :
-             (plans ?? []).map(plan => (
-              <div key={plan.id} className="ds-card" style={{ display:'flex', flexDirection:'column' }}>
-                <div style={{ padding:'16px 18px 0', flex:1 }}>
-                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
-                    <p style={{ fontSize:13.5, fontWeight:600, color:'#1a1a1a' }}>{plan.name}</p>
-                    <span style={{ fontSize:11.5, fontWeight:600, background:'#f0fdf4', color:'#15803d', padding:'3px 10px', borderRadius:20 }}>{plan.roi}% ROI</span>
-                  </div>
-                  {plan.description && (
-                    <p style={{ fontSize:12, color:'#aaa', lineHeight:1.55, marginBottom:12 }}>{plan.description}</p>
-                  )}
-                  <div style={{ display:'flex', flexDirection:'column', gap:7, marginBottom:14 }}>
-                    {[
-                      ['Min. amount', formatCurrency(Number(plan.min_amount))],
-                      ['Duration',    `${plan.duration_days} days`],
-                      ...(plan.max_amount ? [['Max. amount', formatCurrency(Number(plan.max_amount))]] : []),
-                    ].map(([l,v]) => (
-                      <div key={l} style={{ display:'flex', justifyContent:'space-between', fontSize:12 }}>
-                        <span style={{ color:'#aaa' }}>{l}</span>
-                        <span style={{ fontWeight:500, color:'#1a1a1a' }}>{v}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div style={{ padding:'0 18px 18px' }}>
-                  <button className="ds-btn-primary" style={{ width:'100%' }} onClick={() => setSelectedPlan(plan)}>
-                    <ArrowUp size={13} /> Invest Now
-                  </button>
-                </div>
-              </div>
-             ))}
-          </div>
-        )}
-
         {/* My Investments */}
-        {activeTab === 'my' && (
-          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-            {investmentsLoading ? <Spinner /> :
-             (investments ?? []).length === 0 ? <Empty msg="No active investments yet." /> :
-             (investments ?? []).map(inv => (
-              <div key={inv.id} className="ds-card" style={{ padding:'16px 18px' }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
-                  <div>
-                    <p style={{ fontSize:13.5, fontWeight:600, color:'#1a1a1a', marginBottom:3 }}>{inv.plan_name}</p>
-                    <p style={{ fontSize:11.5, color:'#bbb' }}>
-                      {new Date(inv.created_at).toLocaleDateString('en-NG', { day:'numeric', month:'short', year:'numeric' })}
-                    </p>
+        {investments.length > 0 && (
+          <>
+            <h2 className="text-xl font-semibold mt-8">My Investments</h2>
+            <div className="space-y-3">
+              {investments.map((investment) => (
+                <Card key={investment.id} className="p-4">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                      <h3 className="font-semibold">{investment.plan_name}</h3>
+                      <p className="text-sm text-gray-500">Invested: {formatCurrency(investment.amount)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500">Daily Profit</p>
+                      <p className="font-semibold text-green-600">{formatCurrency(investment.daily_profit)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500">Total Profit</p>
+                      <p className="font-semibold text-green-600">{formatCurrency(investment.total_profit)}</p>
+                    </div>
+                    <div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        investment.status === 'active' ? 'bg-green-100 text-green-700' :
+                        investment.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                        investment.status === 'completed' ? 'bg-blue-100 text-blue-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {investment.status}
+                      </span>
+                    </div>
                   </div>
-                  <p style={{ fontSize:16, fontWeight:700, color:'#16a34a' }}>+{formatCurrency(Number(inv.expected_return))}</p>
-                </div>
-                <div className="ds-divider" />
-                <div style={{ display:'flex', gap:20, marginTop:10, fontSize:12 }}>
-                  <span style={{ color:'#aaa' }}>Invested: <span style={{ fontWeight:500, color:'#1a1a1a' }}>{formatCurrency(Number(inv.amount))}</span></span>
-                  {inv.status && (
-                    <span className={`ds-badge ${inv.status}`}><span className="ds-badge-dot" />{inv.status}</span>
-                  )}
-                </div>
-              </div>
-             ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          </>
         )}
 
-        {/* Transactions */}
-        {activeTab === 'transactions' && (
-          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-            {transactionsLoading ? <Spinner /> :
-             (transactions ?? []).length === 0 ? <Empty msg="No transactions yet." /> :
-             (transactions ?? []).map(tx => (
-              <div key={tx.id} className="ds-card" style={{ padding:'14px 18px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        {/* Investment Modal */}
+        {showModal && selectedPlan && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6">
+              <h2 className="text-xl font-bold mb-4">Invest in {selectedPlan.name}</h2>
+              <div className="space-y-4">
                 <div>
-                  <p style={{ fontSize:12.5, fontWeight:500, color:'#1a1a1a', textTransform:'capitalize', marginBottom:3 }}>{tx.type}</p>
-                  <p style={{ fontSize:11.5, color:'#bbb' }}>
-                    {new Date(tx.created_at).toLocaleDateString('en-NG', { day:'numeric', month:'short', year:'numeric' })}
+                  <label className="block text-sm font-medium mb-1">Investment Amount (USD)</label>
+                  <Input
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder={`Min: ${selectedPlan.min_amount}`}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Min: {formatCurrency(selectedPlan.min_amount)}
+                    {selectedPlan.max_amount && ` | Max: ${formatCurrency(selectedPlan.max_amount)}`}
                   </p>
                 </div>
-                <p style={{ fontSize:13.5, fontWeight:600, color:'#16a34a' }}>{formatCurrency(Number(tx.amount))}</p>
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="text-sm text-gray-600">Daily Returns: {selectedPlan.daily_interest_rate}%</p>
+                  <p className="text-sm text-gray-600">Duration: {selectedPlan.duration_days} days</p>
+                  {amount && (
+                    <p className="text-sm font-semibold text-orange-600 mt-2">
+                      Est. Total Return: {formatCurrency(parseFloat(amount) + (parseFloat(amount) * selectedPlan.daily_interest_rate / 100 * selectedPlan.duration_days))}
+                    </p>
+                  )}
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setShowModal(false)} className="flex-1">
+                    Cancel
+                  </Button>
+                  <Button onClick={handleInvest} className="flex-1 bg-orange-500 hover:bg-orange-600">
+                    Confirm Investment
+                  </Button>
+                </div>
               </div>
-             ))}
+            </div>
           </div>
         )}
       </div>
-
-      {selectedPlan && (
-        <InvestModal plan={selectedPlan} onClose={() => setSelectedPlan(null)} onSuccess={() => setActiveTab('my')} />
-      )}
     </MainLayout>
   );
 }
