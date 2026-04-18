@@ -38,7 +38,7 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
+    <div className="min-h-screen bg-linear-to-br from-orange-50 to-amber-50">
       <ModernSidebar />
       <ModernHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
       <main className="p-6 transition-all duration-300 lg:ml-72 lg:mt-16">

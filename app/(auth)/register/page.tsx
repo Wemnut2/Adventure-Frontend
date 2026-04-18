@@ -7,12 +7,8 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  Mail, Lock, User, Phone, Eye, EyeOff, UserPlus,
-  CheckCircle, XCircle
+  Mail, Lock, User, Phone, Eye, EyeOff,
 } from 'lucide-react';
-import { Button } from '@/layout/components/Button';
-import { Input } from '@/layout/components/Input';
-import { Card } from '@/layout/components/Card';
 import { useToast } from '@/libs/src/contexts/ToastContext';
 import { useRegister } from '@/libs/hooks/useAuth';
 import { registerSchema, RegisterFormData } from '@/libs/src/schemas/auth.schema';
@@ -58,9 +54,9 @@ export default function RegisterPage() {
   const passwordStrength = getPasswordStrength(password);
 
   const getStrengthColor = () => {
-    if (passwordStrength <= 2) return 'bg-red-500';
-    if (passwordStrength <= 3) return 'bg-orange-500';
-    return 'bg-green-500';
+    if (passwordStrength <= 2) return '#e05252';
+    if (passwordStrength <= 3) return '#f97316';
+    return '#10b981';
   };
 
   const getStrengthText = () => {
@@ -74,13 +70,13 @@ export default function RegisterPage() {
       await registerMutation.mutateAsync(data);
 
       showToast(
-        'Registration successful! Please login.',
+        'Registration successful! Please check your email to verify your account.',
         'success'
       );
 
       setTimeout(() => {
         router.push('/login');
-      }, 1500);
+      }, 2000);
 
     } catch (error: any) {
       console.error(error);
@@ -90,175 +86,439 @@ export default function RegisterPage() {
       } else if (error.response?.data?.username) {
         showToast('Username already taken', 'error');
       } else {
-        showToast('Registration failed', 'error');
+        showToast('Registration failed. Please try again.', 'error');
       }
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-lg">
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{
+        background: 'linear-gradient(135deg, #f5f5f5 0%, #ebebeb 100%)',
+        fontFamily: "'DM Sans', sans-serif",
+      }}
+    >
+      {/* Google Font import via style tag */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
 
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-100 rounded-full mb-4">
-            <UserPlus className="h-8 w-8 text-orange-500" />
-          </div>
+        .register-card {
+          background: #ffffff;
+          border-radius: 20px;
+          border: 1px solid rgba(0,0,0,0.06);
+          box-shadow:
+            0 1px 2px rgba(0,0,0,0.04),
+            0 8px 32px rgba(0,0,0,0.07);
+        }
 
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Create Account
-          </h1>
+        .gradient-btn {
+          background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+          color: #ffffff;
+          border: none;
+          border-radius: 10px;
+          padding: 11px 20px;
+          font-size: 13px;
+          font-weight: 500;
+          letter-spacing: 0.02em;
+          width: 100%;
+          cursor: pointer;
+          transition: opacity 0.18s ease, transform 0.18s ease;
+          font-family: 'DM Sans', sans-serif;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
 
-          <p className="text-gray-600">
-            Join The Adventure Challenge
+        .gradient-btn:hover:not(:disabled) {
+          opacity: 0.88;
+          transform: translateY(-1px);
+        }
+
+        .gradient-btn:active {
+          transform: translateY(0);
+        }
+
+        .gradient-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .outline-btn {
+          background: transparent;
+          color: #1a1a1a;
+          border: 1px solid rgba(0,0,0,0.14);
+          border-radius: 10px;
+          padding: 11px 20px;
+          font-size: 13px;
+          font-weight: 500;
+          width: 100%;
+          cursor: pointer;
+          transition: background 0.18s ease, border-color 0.18s ease;
+          font-family: 'DM Sans', sans-serif;
+          text-align: center;
+          display: block;
+          letter-spacing: 0.02em;
+          text-decoration: none;
+        }
+
+        .outline-btn:hover {
+          background: rgba(0,0,0,0.03);
+          border-color: rgba(0,0,0,0.24);
+        }
+
+        .field-group {
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+        }
+
+        .field-label {
+          font-size: 11.5px;
+          font-weight: 500;
+          color: #6b6b6b;
+          letter-spacing: 0.03em;
+          text-transform: uppercase;
+        }
+
+        .field-wrapper {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+
+        .field-icon {
+          position: absolute;
+          left: 12px;
+          color: #b0b0b0;
+          pointer-events: none;
+          display: flex;
+          align-items: center;
+        }
+
+        .field-input {
+          width: 100%;
+          padding: 10px 12px 10px 38px;
+          font-size: 13px;
+          font-family: 'DM Sans', sans-serif;
+          color: #1a1a1a;
+          background: #fafafa;
+          border: 1px solid rgba(0,0,0,0.1);
+          border-radius: 10px;
+          outline: none;
+          transition: border-color 0.15s ease, box-shadow 0.15s ease;
+          box-sizing: border-box;
+        }
+
+        .field-input::placeholder {
+          color: #c0c0c0;
+          font-size: 13px;
+        }
+
+        .field-input:focus {
+          border-color: rgba(0,0,0,0.3);
+          box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+          background: #fff;
+        }
+
+        .field-input.has-error {
+          border-color: #e05252;
+        }
+
+        .field-error {
+          font-size: 11px;
+          color: #e05252;
+          margin-top: 2px;
+        }
+
+        .eye-btn {
+          position: absolute;
+          right: 12px;
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: #b0b0b0;
+          display: flex;
+          align-items: center;
+          padding: 0;
+          transition: color 0.15s ease;
+        }
+
+        .eye-btn:hover { color: #555; }
+
+        .divider {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin: 4px 0;
+        }
+
+        .divider-line {
+          flex: 1;
+          height: 1px;
+          background: rgba(0,0,0,0.08);
+        }
+
+        .divider-text {
+          font-size: 11.5px;
+          color: #b0b0b0;
+          white-space: nowrap;
+        }
+
+        .wordmark {
+          font-family: 'DM Serif Display', serif;
+          font-size: 22px;
+          color: #1a1a1a;
+          letter-spacing: -0.01em;
+        }
+
+        .wordmark span {
+          color: #888;
+        }
+
+        .strength-bar {
+          height: 4px;
+          background: rgba(0,0,0,0.08);
+          border-radius: 2px;
+          overflow: hidden;
+          margin-top: 4px;
+        }
+
+        .strength-fill {
+          height: 100%;
+          transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        .checkbox-wrapper {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+        }
+
+        .checkbox-input {
+          margin-top: 2px;
+          width: 14px;
+          height: 14px;
+          cursor: pointer;
+          accent-color: #1a1a1a;
+        }
+
+        .checkbox-label {
+          font-size: 12px;
+          color: #888;
+          line-height: 1.5;
+        }
+
+        .checkbox-label a {
+          color: #666;
+          text-decoration: none;
+          transition: color 0.15s;
+        }
+
+        .checkbox-label a:hover {
+          color: #1a1a1a;
+        }
+      `}</style>
+
+      <div className="register-card" style={{ width: '100%', maxWidth: '440px', padding: '40px 36px' }}>
+
+        {/* Brand */}
+        <div style={{ marginBottom: '32px' }}>
+          <p className="wordmark">Adventure<span>.</span></p>
+          <p style={{ fontSize: '13px', color: '#888', marginTop: '6px', fontWeight: 400 }}>
+            Create your account
           </p>
         </div>
 
-        {/* FORM */}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        {/* Form */}
+        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-          <Input
-            label="Email Address"
-            type="email"
-            placeholder="you@example.com"
-            icon={<Mail className="h-5 w-5 text-gray-400" />}
-            error={errors.email?.message}
-            {...register('email')}
-          />
-
-          <Input
-            label="Username"
-            type="text"
-            placeholder="johndoe"
-            icon={<User className="h-5 w-5 text-gray-400" />}
-            error={errors.username?.message}
-            {...register('username')}
-          />
-
-          <Input
-            label="Phone Number (Optional)"
-            type="tel"
-            placeholder="+234..."
-            icon={<Phone className="h-5 w-5 text-gray-400" />}
-            error={errors.phone_number?.message}
-            {...register('phone_number')}
-          />
-
-          {/* PASSWORD */}
-          <div className="relative">
-            <Input
-              label="Password"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Create password"
-              icon={<Lock className="h-5 w-5 text-gray-400" />}
-              error={errors.password?.message}
-              {...register('password')}
-            />
-
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-[38px] text-gray-500 hover:text-orange-500"
-            >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </button>
-          </div>
-
-          {/* PASSWORD STRENGTH */}
-          {password && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs">
-                <span>Password strength</span>
-                <span className="font-semibold text-orange-500">
-                  {getStrengthText()}
-                </span>
-              </div>
-
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className={`h-full ${getStrengthColor()} transition-all`}
-                  style={{ width: `${(passwordStrength / 5) * 100}%` }}
-                />
-              </div>
+          {/* Email */}
+          <div className="field-group">
+            <label className="field-label">Email Address</label>
+            <div className="field-wrapper">
+              <span className="field-icon">
+                <Mail size={15} />
+              </span>
+              <input
+                className={`field-input${errors.email ? ' has-error' : ''}`}
+                type="email"
+                placeholder="you@example.com"
+                {...register('email')}
+              />
             </div>
-          )}
-
-          {/* CONFIRM PASSWORD */}
-          <div className="relative">
-            <Input
-              label="Confirm Password"
-              type={showConfirmPassword ? 'text' : 'password'}
-              placeholder="Confirm password"
-              icon={<Lock className="h-5 w-5 text-gray-400" />}
-              error={errors.confirm_password?.message}
-              {...register('confirm_password')}
-            />
-
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-[38px] text-gray-500 hover:text-orange-500"
-            >
-              {showConfirmPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </button>
+            {errors.email && <p className="field-error">{errors.email.message}</p>}
           </div>
 
-          {/* TERMS */}
-          <div className="flex items-start gap-2">
+          {/* Username */}
+          <div className="field-group">
+            <label className="field-label">Username</label>
+            <div className="field-wrapper">
+              <span className="field-icon">
+                <User size={15} />
+              </span>
+              <input
+                className={`field-input${errors.username ? ' has-error' : ''}`}
+                type="text"
+                placeholder="johndoe"
+                {...register('username')}
+              />
+            </div>
+            {errors.username && <p className="field-error">{errors.username.message}</p>}
+          </div>
+
+          {/* Phone Number */}
+          <div className="field-group">
+            <label className="field-label">Phone Number (Optional)</label>
+            <div className="field-wrapper">
+              <span className="field-icon">
+                <Phone size={15} />
+              </span>
+              <input
+                className={`field-input${errors.phone_number ? ' has-error' : ''}`}
+                type="tel"
+                placeholder="+234..."
+                {...register('phone_number')}
+              />
+            </div>
+            {errors.phone_number && <p className="field-error">{errors.phone_number.message}</p>}
+          </div>
+
+          {/* Password */}
+          <div className="field-group">
+            <label className="field-label">Password</label>
+            <div className="field-wrapper">
+              <span className="field-icon">
+                <Lock size={15} />
+              </span>
+              <input
+                className={`field-input${errors.password ? ' has-error' : ''}`}
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Create password"
+                style={{ paddingRight: '38px' }}
+                {...register('password')}
+              />
+              <button
+                type="button"
+                className="eye-btn"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+            {errors.password && <p className="field-error">{errors.password.message}</p>}
+            
+            {/* Password Strength Indicator */}
+            {password && (
+              <div style={{ marginTop: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '11px', color: '#b0b0b0' }}>Password strength</span>
+                  <span style={{ 
+                    fontSize: '11px', 
+                    fontWeight: 500,
+                    color: getStrengthColor() 
+                  }}>
+                    {getStrengthText()}
+                  </span>
+                </div>
+                <div className="strength-bar">
+                  <div 
+                    className="strength-fill"
+                    style={{ 
+                      width: `${(passwordStrength / 5) * 100}%`,
+                      backgroundColor: getStrengthColor()
+                    }} 
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Confirm Password */}
+          <div className="field-group">
+            <label className="field-label">Confirm Password</label>
+            <div className="field-wrapper">
+              <span className="field-icon">
+                <Lock size={15} />
+              </span>
+              <input
+                className={`field-input${errors.confirm_password ? ' has-error' : ''}`}
+                type={showConfirmPassword ? 'text' : 'password'}
+                placeholder="Confirm password"
+                style={{ paddingRight: '38px' }}
+                {...register('confirm_password')}
+              />
+              <button
+                type="button"
+                className="eye-btn"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+            {errors.confirm_password && <p className="field-error">{errors.confirm_password.message}</p>}
+          </div>
+
+          {/* Terms and Conditions */}
+          <div className="checkbox-wrapper">
             <input
               type="checkbox"
-              className="mt-1 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+              className="checkbox-input"
               required
             />
-
-            <label className="text-sm text-gray-600">
+            <span className="checkbox-label">
               I agree to the{' '}
-              <Link href="/terms" className="text-orange-500 hover:underline">
-                Terms
-              </Link>{' '}
-              and{' '}
-              <Link href="/privacy" className="text-orange-500 hover:underline">
-                Privacy Policy
-              </Link>
-            </label>
+              <Link href="/terms">Terms</Link>
+              {' '}and{' '}
+              <Link href="/privacy">Privacy Policy</Link>
+            </span>
           </div>
 
-          {/* SUBMIT */}
-          <Button
+          {/* Submit Button */}
+          <button
             type="submit"
-            fullWidth
-            isLoading={isSubmitting || registerMutation.isPending}
-            className="bg-orange-500 hover:bg-orange-600 text-white"
+            className="gradient-btn"
+            disabled={isSubmitting || registerMutation.isPending}
+            style={{ marginTop: '4px' }}
           >
-            Create Account
-          </Button>
+            {isSubmitting || registerMutation.isPending ? (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 0.8s linear infinite' }}>
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+                Creating account…
+              </>
+            ) : (
+              'Create Account'
+            )}
+          </button>
 
-          {/* LOGIN LINK */}
-          <div className="text-center text-sm text-gray-500">
-            Already have an account?
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
+          {/* Divider */}
+          <div className="divider">
+            <div className="divider-line" />
+            <span className="divider-text">Already have an account?</span>
+            <div className="divider-line" />
           </div>
 
-          <Link href="/login">
-            <Button
-              type="button"
-              variant="outline"
-              fullWidth
-              className="border-orange-500 text-orange-500 hover:bg-orange-50"
-            >
-              Sign In
-            </Button>
+          {/* Sign In Link */}
+          <Link href="/login" style={{ textDecoration: 'none' }}>
+            <span className="outline-btn">Sign In</span>
           </Link>
 
         </form>
-      </Card>
+
+        {/* Footer */}
+        <p style={{ marginTop: '28px', fontSize: '11px', color: '#bbb', textAlign: 'center', lineHeight: '1.6' }}>
+          By creating an account, you agree to our{' '}
+          <Link href="/terms" style={{ color: '#888', textDecoration: 'none' }}>Terms</Link>
+          {' '}and{' '}
+          <Link href="/privacy" style={{ color: '#888', textDecoration: 'none' }}>Privacy Policy</Link>
+        </p>
+
+      </div>
     </div>
   );
 }

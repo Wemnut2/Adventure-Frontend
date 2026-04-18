@@ -2,26 +2,38 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Card } from '@/layout/components/Card';
-import { Button } from '@/layout/components/Button';
-import { Input } from '@/layout/components/Input';
 import { adminService } from '@/libs/services/admin.service';
 import { useToast } from '@/libs/src/contexts/ToastContext';
 import { formatCurrency, formatDateTime } from '@/libs/utils/format';
 import { Transaction } from '@/libs/types';
-import {
-  Search,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Download,
-  Loader2
-} from 'lucide-react';
+import { ADMIN_STYLES } from '../_style/adminPageStyles';
+import { Search, Download } from 'lucide-react';
+
+function Spinner({ text = 'Loading…' }: { text?: string }) {
+  return (
+    <div className="adm-loader-page">
+      <div className="adm-loader-inner">
+        <svg className="adm-spinner" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        <p className="adm-loader-text">{text}</p>
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const s = status === 'completed' ? 'completed' : status === 'pending' ? 'pending' : 'failed';
+  return (
+    <span className={`adm-badge ${s}`}>
+      <span className="adm-badge-dot" />
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </span>
+  );
+}
 
 export default function AdminTransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading]           = useState(true);
+  const [searchTerm, setSearchTerm]     = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const { showToast } = useToast();
 
@@ -30,246 +42,136 @@ export default function AdminTransactionsPage() {
     try {
       const data = await adminService.getAllTransactions();
       setTransactions(data);
-    } catch {
-      showToast('Failed to fetch transactions', 'error');
-    } finally {
-      setLoading(false);
-    }
+    } catch { showToast('Failed to fetch transactions', 'error'); }
+    finally { setLoading(false); }
   }, [showToast]);
 
-  useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions]);
+  useEffect(() => { fetchTransactions(); }, [fetchTransactions]);
 
-  const handleApproveTransaction = async (transactionId: number) => {
+  const handleApprove = async (id: number) => {
     try {
-      await adminService.approveTransaction(transactionId);
-      showToast('Transaction approved successfully', 'success');
-      fetchTransactions();
-    } catch {
-      showToast('Failed to approve transaction', 'error');
-    }
+      await adminService.approveTransaction(id);
+      showToast('Transaction approved', 'success'); fetchTransactions();
+    } catch { showToast('Failed to approve', 'error'); }
   };
 
-  const filteredTransactions = transactions.filter((transaction: Transaction) => {
-    const matchesSearch = 
-      transaction.reference?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.user_email?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || transaction.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  const handleExport = () => {
+    const csv = transactions.map(t => ({
+      Date: formatDateTime(t.created_at), User: t.user_email,
+      Type: t.transaction_type, Amount: t.amount,
+      Reference: t.reference, Status: t.status,
+    }));
+    console.log('Export CSV:', csv);
+    showToast('Export started', 'info');
+  };
+
+  const filtered = transactions.filter(t => {
+    const q = searchTerm.toLowerCase();
+    return (
+      (t.reference?.toLowerCase().includes(q) || t.user_email?.toLowerCase().includes(q)) &&
+      (statusFilter === 'all' || t.status === statusFilter)
+    );
   });
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
-            <CheckCircle className="h-3 w-3" />
-            Completed
-          </span>
-        );
-      case 'pending':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-700">
-            <Clock className="h-3 w-3" />
-            Pending
-          </span>
-        );
-      case 'failed':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700">
-            <XCircle className="h-3 w-3" />
-            Failed
-          </span>
-        );
-      case 'cancelled':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">
-            <XCircle className="h-3 w-3" />
-            Cancelled
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">
-            {status}
-          </span>
-        );
-    }
-  };
-
   const stats = {
-    total: transactions.length,
-    pending: transactions.filter((t: Transaction) => t.status === 'pending').length,
-    completed: transactions.filter((t: Transaction) => t.status === 'completed').length,
-    failed: transactions.filter((t: Transaction) => t.status === 'failed').length,
-    totalVolume: transactions.reduce((sum: number, t: Transaction) => sum + (t.amount || 0), 0)
+    total:       transactions.length,
+    pending:     transactions.filter(t => t.status === 'pending').length,
+    completed:   transactions.filter(t => t.status === 'completed').length,
+    totalVolume: transactions.reduce((s, t) => s + (t.amount || 0), 0),
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading transactions...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Transaction Management</h1>
-        <p className="mt-1 text-gray-600">
-          Review and process all platform transactions
-        </p>
+    <div className="adm adm-root">
+      <style>{ADMIN_STYLES}</style>
+
+      <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
+        <div>
+          <h1 className="adm-title">Transactions</h1>
+          <p className="adm-subtitle">Review and process all platform transactions</p>
+        </div>
+        <button className="adm-btn-ghost" onClick={handleExport}><Download size={13} /> Export Report</button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="p-4">
-          <p className="text-sm text-gray-600">Total Transactions</p>
-          <p className="text-2xl font-bold">{stats.total}</p>
-          <p className="text-xs text-gray-500 mt-1">All time</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-sm text-gray-600">Pending</p>
-          <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-          <p className="text-xs text-gray-500 mt-1">Awaiting approval</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-sm text-gray-600">Completed</p>
-          <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
-          <p className="text-xs text-gray-500 mt-1">Successfully processed</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-sm text-gray-600">Total Volume</p>
-          <p className="text-2xl font-bold">{formatCurrency(stats.totalVolume)}</p>
-          <p className="text-xs text-gray-500 mt-1">All transactions</p>
-        </Card>
+      <div className="adm-stat-grid" style={{ gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))' }}>
+        {[
+          { label:'Total',        value: stats.total,                        sub:'All time' },
+          { label:'Pending',      value: stats.pending,                      sub:'Awaiting approval' },
+          { label:'Completed',    value: stats.completed,                    sub:'Processed' },
+          { label:'Total Volume', value: formatCurrency(stats.totalVolume),  sub:'All transactions' },
+        ].map(s => (
+          <div className="adm-stat-card" key={s.label}>
+            <p className="adm-stat-label">{s.label}</p>
+            <p className="adm-stat-value">{s.value}</p>
+            <p className="adm-stat-sub">{s.sub}</p>
+          </div>
+        ))}
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-3">
-          <div className="w-64">
-            <Input
-              placeholder="Search by reference or email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              icon={<Search className="h-4 w-4" />}
-            />
-          </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="completed">Completed</option>
-            <option value="failed">Failed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
+      <div className="adm-toolbar">
+        <div className="adm-search-wrap">
+          <Search size={13} color="#ccc" />
+          <input className="adm-search-input" placeholder="Search reference or email…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
-        <Button variant="outline" onClick={() => {
-          // Export functionality
-          const csv = transactions.map(t => ({
-            Date: formatDateTime(t.created_at),
-            User: t.user_email,
-            Type: t.transaction_type,
-            Amount: t.amount,
-            Reference: t.reference,
-            Status: t.status
-          }));
-          console.log('Export CSV:', csv);
-          showToast('Export started', 'info');
-        }}>
-          <Download className="mr-2 h-4 w-4" />
-          Export Report
-        </Button>
+        <select className="adm-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+          <option value="all">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="completed">Completed</option>
+          <option value="failed">Failed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
       </div>
 
-      {/* Transactions Table */}
-      <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">User</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Reference</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredTransactions.length > 0 ? (
-                filteredTransactions.map((transaction: Transaction) => (
-                  <tr key={transaction.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 text-sm whitespace-nowrap">
-                      {formatDateTime(transaction.created_at)}
+      {loading ? <Spinner text="Loading transactions…" /> : (
+        <div className="adm-table-card">
+          <div style={{ overflowX:'auto' }}>
+            <table className="adm-table">
+              <thead>
+                <tr>
+                  <th>Date</th><th>User</th><th>Type</th>
+                  <th>Amount</th><th>Reference</th><th>Status</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr className="adm-empty-row">
+                    <td colSpan={7}>{searchTerm || statusFilter !== 'all' ? 'No matching transactions' : 'No transactions yet'}</td>
+                  </tr>
+                ) : filtered.map(t => (
+                  <tr key={t.id}>
+                    <td style={{ whiteSpace:'nowrap', color:'#aaa' }}>{formatDateTime(t.created_at)}</td>
+                    <td>{t.user_email}</td>
+                    <td style={{ textTransform:'capitalize' }}>{t.transaction_type}</td>
+                    <td style={{ fontWeight:600, whiteSpace:'nowrap', color: t.transaction_type === 'withdrawal' ? '#e05252' : '#16a34a' }}>
+                      {t.transaction_type === 'withdrawal' ? '−' : '+'}{formatCurrency(t.amount)}
                     </td>
-                    <td className="px-6 py-4 text-sm">{transaction.user_email}</td>
-                    <td className="px-6 py-4 text-sm capitalize">{transaction.transaction_type}</td>
-                    <td className={`px-6 py-4 text-sm font-semibold whitespace-nowrap ${
-                      transaction.transaction_type === 'withdrawal' ? 'text-red-600' : 'text-green-600'
-                    }`}>
-                      {transaction.transaction_type === 'withdrawal' ? '-' : '+'}
-                      {formatCurrency(transaction.amount)}
-                    </td>
-                    <td className="px-6 py-4 font-mono text-xs">
-                      {transaction.reference}
-                    </td>
-                    <td className="px-6 py-4">{getStatusBadge(transaction.status)}</td>
-                    <td className="px-6 py-4">
-                      {transaction.status === 'pending' && (
-                        <Button
-                          size="sm"
-                          onClick={() => handleApproveTransaction(transaction.id)}
-                          className="whitespace-nowrap"
-                        >
-                          Approve
-                        </Button>
+                    <td><code className="adm-mono">{t.reference}</code></td>
+                    <td><StatusBadge status={t.status} /></td>
+                    <td>
+                      {t.status === 'pending' && (
+                        <button className="adm-btn-success adm-btn-sm" onClick={() => handleApprove(t.id)}>Approve</button>
                       )}
-                      {transaction.status === 'completed' && (
-                        <span className="text-xs text-green-600">Processed</span>
+                      {t.status === 'completed' && (
+                        <span style={{ fontSize:11, color:'#16a34a' }}>Processed</span>
                       )}
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                    {searchTerm || statusFilter !== 'all' ? 'No matching transactions found' : 'No transactions yet'}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-           </table>
-        </div>
-        
-        {filteredTransactions.length > 0 && (
-          <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
-            <div className="flex items-center justify-between text-sm">
-              <p className="text-gray-600">
-                Showing {filteredTransactions.length} of {transactions.length} transactions
-              </p>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled>
-                  Previous
-                </Button>
-                <Button variant="outline" size="sm" disabled>
-                  Next
-                </Button>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {filtered.length > 0 && (
+            <div className="adm-table-footer">
+              <span className="adm-table-count">Showing {filtered.length} of {transactions.length} transactions</span>
+              <div style={{ display:'flex', gap:6 }}>
+                <button className="adm-btn-ghost adm-btn-sm" disabled>Previous</button>
+                <button className="adm-btn-ghost adm-btn-sm" disabled>Next</button>
               </div>
             </div>
-          </div>
-        )}
-      </Card>
+          )}
+        </div>
+      )}
     </div>
   );
 }

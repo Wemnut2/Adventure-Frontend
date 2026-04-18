@@ -4,65 +4,258 @@ import { useState, useEffect } from "react";
 import { Send, CheckCircle, User, MapPin, DollarSign, FileText, MessageCircle, AlertCircle, XCircle, HelpCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { apiService } from "@/libs/services/api";
-import { 
-  openWhatsApp, 
-  openTelegram, 
+import {
+  openWhatsApp,
+  openTelegram,
   openWhatsAppSecondary,
   openTelegramSecondary,
   whatsAppMessages,
-  getAvailableContacts 
+  getAvailableContacts,
 } from "@/libs/utils/whatsapp";
 import { useAuthStore } from "@/libs/stores/auth.store";
 
 type FormData = {
-  fullName: string;
-  address: string;
-  gender: string;
-  age: string;
-  monthlyIncome: string;
-  maritalStatus: string;
-  contactNumber: string;
-  email: string;
-  hearingStatus: string;
-  housingSituation: string;
-  preferredPayment: string;
-  location: string;
-  startDate: string;
-  reason: string;
-  participantSignature: string;
-  participantSignatureDate: string;
+  fullName: string; address: string; gender: string; age: string;
+  monthlyIncome: string; maritalStatus: string; contactNumber: string;
+  email: string; hearingStatus: string; housingSituation: string;
+  preferredPayment: string; location: string; startDate: string;
+  reason: string; participantSignature: string; participantSignatureDate: string;
 };
 
-type FormErrors = {
-  [key in keyof FormData]?: string;
-} & {
-  general?: string;
-};
+type FormErrors = { [key in keyof FormData]?: string } & { general?: string };
 
-const inputClass =
-  "w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400 transition-colors";
+/* ─── Shared styles ─────────────────────────────────────────────────────── */
+const STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
 
-const selectClass =
-  "w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400 transition-colors";
+  .app-root * { font-family: 'DM Sans', sans-serif; box-sizing: border-box; }
 
-const errorInputClass =
-  "w-full px-4 py-2.5 bg-white border border-red-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-400 transition-colors";
+  /* Layout */
+  .app-page   { min-height: 100vh; background: #f5f5f5; }
+  .app-hero   { background: #fff; padding: 40px 24px 32px; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.06); }
+  .app-tag    {
+    display: inline-flex; align-items: center;
+    background: #fff8f4; border: 1px solid rgba(249,115,22,0.2);
+    border-radius: 20px; padding: 3px 12px; margin-bottom: 14px;
+    font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; color: #f97316;
+  }
+  .app-title   { font-family: 'DM Serif Display', serif; font-size: 26px; color: #1a1a1a; letter-spacing: -0.02em; margin-bottom: 6px; }
+  .app-sub     { font-size: 12px; color: #aaa; }
 
-function Field({
-  label, required, children, error,
-}: {
+  .app-body  { max-width: 640px; margin: 0 auto; padding: 28px 16px 60px; }
+
+  /* Cards */
+  .form-card {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.07);
+    border-radius: 14px;
+    padding: 22px 20px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  /* Section header */
+  .sec-head {
+    display: flex; align-items: center; gap: 8px;
+    padding-bottom: 14px; margin-bottom: 16px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .sec-icon {
+    width: 26px; height: 26px; border-radius: 7px;
+    background: #f5f5f5;
+    display: flex; align-items: center; justify-content: center;
+    color: #888;
+  }
+  .sec-title {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.07em;
+    text-transform: uppercase; color: #888;
+  }
+
+  /* Field */
+  .field-wrap  { display: flex; flex-direction: column; gap: 5px; }
+  .field-label { font-size: 11.5px; font-weight: 500; color: #555; }
+  .req-star    { color: #f97316; margin-left: 2px; }
+
+  .field-input, .field-select, .field-textarea {
+    width: 100%; padding: 9px 12px;
+    background: #fafafa; border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 9px; font-size: 12.5px; color: #1a1a1a;
+    font-family: 'DM Sans', sans-serif;
+    outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+    -webkit-appearance: none;
+  }
+  .field-input::placeholder, .field-textarea::placeholder { color: #ccc; font-size: 12.5px; }
+  .field-input:focus, .field-select:focus, .field-textarea:focus {
+    border-color: rgba(0,0,0,0.25); box-shadow: 0 0 0 3px rgba(0,0,0,0.04); background: #fff;
+  }
+  .field-input.err, .field-select.err, .field-textarea.err {
+    border-color: #e05252;
+  }
+  .field-input.err:focus, .field-select.err:focus { box-shadow: 0 0 0 3px rgba(224,82,82,0.08); }
+  .field-textarea { resize: vertical; min-height: 96px; }
+  .field-error { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #e05252; margin-top: 1px; }
+
+  /* 2-col grid */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .col-span-2 { grid-column: 1 / -1; }
+  @media (max-width: 540px) { .grid2 { grid-template-columns: 1fr; } .col-span-2 { grid-column: 1; } }
+
+  /* Error alert */
+  .err-alert {
+    background: #fff5f5; border: 1px solid rgba(224,82,82,0.2);
+    border-radius: 12px; padding: 14px 16px; margin-bottom: 16px;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .err-list { flex: 1; }
+  .err-alert-title { font-size: 12px; font-weight: 600; color: #c62828; margin-bottom: 8px; }
+  .err-list-item   { font-size: 11.5px; color: #c62828; margin-bottom: 3px; }
+  .err-close { background: none; border: none; cursor: pointer; color: #e05252; padding: 0; }
+
+  /* Submit button */
+  .submit-btn {
+    width: 100%; padding: 13px;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    color: #fff; border: none; border-radius: 11px;
+    font-size: 13px; font-weight: 500; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    gap: 8px; letter-spacing: 0.01em;
+    transition: opacity 0.18s, transform 0.18s;
+    margin-top: 6px;
+  }
+  .submit-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+  .submit-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  /* Ghost / secondary button */
+  .ghost-btn {
+    width: 100%; padding: 11px;
+    background: transparent; color: #555;
+    border: 1px solid rgba(0,0,0,0.1); border-radius: 11px;
+    font-size: 12.5px; font-weight: 500; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; transition: background 0.15s, border-color 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+  }
+  .ghost-btn:hover { background: #f5f5f5; border-color: rgba(0,0,0,0.18); color: #1a1a1a; }
+
+  /* Spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { animation: spin 0.7s linear infinite; }
+
+  /* Status card (centered states) */
+  .status-page { min-height: 100vh; background: #f5f5f5; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .status-card {
+    background: #fff; border: 1px solid rgba(0,0,0,0.07);
+    border-radius: 18px; padding: 36px 32px; max-width: 420px; width: 100%;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .status-icon-wrap {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 18px;
+  }
+  .status-icon-wrap.neutral {
+    background: #f5f5f5;
+  }
+  .status-title  { font-family: 'DM Serif Display', serif; font-size: 22px; color: #1a1a1a; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .status-body   { font-size: 12.5px; color: #888; line-height: 1.6; margin-bottom: 20px; }
+
+  .info-strip {
+    background: #fafafa; border: 1px solid rgba(0,0,0,0.07);
+    border-radius: 10px; padding: 14px 16px; margin-bottom: 18px; text-align: left;
+  }
+  .info-strip-title { font-size: 11.5px; font-weight: 600; color: #555; margin-bottom: 10px; }
+  .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
+  .info-row:last-child { margin-bottom: 0; }
+  .info-label { font-size: 12px; color: #aaa; }
+  .info-value { font-size: 12px; font-weight: 500; color: #1a1a1a; }
+  .info-value.orange { color: #f97316; }
+
+  .stack { display: flex; flex-direction: column; gap: 8px; }
+
+  /* Payment modal */
+  .modal-overlay { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .modal-card {
+    background: #fff; border-radius: 18px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.14);
+    max-width: 400px; width: 100%; padding: 28px 24px;
+    max-height: 90vh; overflow-y: auto;
+    animation: dropIn 0.18s ease;
+  }
+  @keyframes dropIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+  .modal-icon-wrap {
+    width: 48px; height: 48px; border-radius: 50%; background: #f5f5f5;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 14px; color: #888;
+  }
+  .modal-title { font-family: 'DM Serif Display', serif; font-size: 20px; color: #1a1a1a; text-align: center; margin-bottom: 6px; letter-spacing: -0.01em; }
+  .modal-sub   { font-size: 12px; color: #aaa; text-align: center; margin-bottom: 20px; }
+
+  .contact-btn {
+    width: 100%; display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px; border-radius: 10px; cursor: pointer;
+    background: #fafafa; border: 1px solid rgba(0,0,0,0.08);
+    text-align: left; margin-bottom: 8px; transition: background 0.15s, border-color 0.15s;
+  }
+  .contact-btn:hover { background: #f0f0f0; border-color: rgba(0,0,0,0.16); }
+  .contact-btn-icon {
+    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #e5e5e5; color: #555;
+  }
+  .contact-btn-label  { font-size: 12.5px; font-weight: 500; color: #1a1a1a; }
+  .contact-btn-sub    { font-size: 11px; color: #aaa; margin-top: 1px; }
+  .contact-btn-arrow  { margin-left: auto; color: #ccc; }
+  .modal-later { background: none; border: none; cursor: pointer; width: 100%; padding: 10px; font-size: 12px; color: #aaa; margin-top: 4px; transition: color 0.15s; font-family: 'DM Sans', sans-serif; }
+  .modal-later:hover { color: #555; }
+
+  /* FAB help button */
+  .fab {
+    position: fixed; bottom: 24px; right: 24px; z-index: 40;
+  }
+  .fab-btn {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    border: none; border-radius: 50%; cursor: pointer; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(249,115,22,0.35);
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  .fab-btn:hover { opacity: 0.9; transform: scale(1.05); }
+
+  .fab-popup {
+    position: absolute; bottom: 54px; right: 0;
+    background: #fff; border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 12px; padding: 12px;
+    min-width: 220px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    animation: dropIn 0.15s ease;
+  }
+  .fab-popup-label { font-size: 11px; color: #aaa; padding: 0 4px 8px; display: block; }
+  .fab-popup-item {
+    width: 100%; display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border-radius: 8px; border: none; background: none;
+    cursor: pointer; font-size: 12.5px; font-family: 'DM Sans', sans-serif;
+    color: #444; transition: background 0.12s;
+    text-align: left;
+  }
+  .fab-popup-item:hover { background: #f5f5f5; color: #1a1a1a; }
+`;
+
+/* ─── Tiny helpers ──────────────────────────────────────────────────────── */
+function Field({ label, required, children, error }: {
   label: string; required?: boolean; children: React.ReactNode; error?: string;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-medium text-gray-700">
-        {label}{required && <span className="text-orange-500 ml-0.5">*</span>}
+    <div className="field-wrap">
+      <label className="field-label">
+        {label}{required && <span className="req-star">*</span>}
       </label>
       {children}
       {error && (
-        <p className="text-xs text-red-500 flex items-center gap-1 mt-0.5">
-          <AlertCircle className="w-3 h-3" />
-          {error}
+        <p className="field-error">
+          <AlertCircle size={11} />{error}
         </p>
       )}
     </div>
@@ -71,258 +264,97 @@ function Field({
 
 function SectionHeader({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
   return (
-    <div className="flex items-center gap-2 pb-3 border-b border-gray-200 mb-4">
-      <div className="bg-orange-100 p-1.5 rounded-lg">
-        <Icon className="w-4 h-4 text-orange-600" />
-      </div>
-      <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">{title}</h3>
+    <div className="sec-head">
+      <span className="sec-icon"><Icon size={13} /></span>
+      <span className="sec-title">{title}</span>
     </div>
   );
 }
 
-// Error Alert Component
 function ErrorAlert({ errors, onClose }: { errors: FormErrors; onClose: () => void }) {
-  const errorCount = Object.keys(errors).filter(k => errors[k as keyof FormErrors]).length;
-  
-  if (errorCount === 0) return null;
-
+  const entries = Object.entries(errors).filter(([, v]) => v);
+  if (!entries.length) return null;
   return (
-    <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-      <div className="flex items-start gap-3">
-        <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-        <div className="flex-1">
-          <h4 className="text-sm font-semibold text-red-800 mb-2">
-            Please fix the following errors ({errorCount}):
-          </h4>
-          <ul className="space-y-1">
-            {Object.entries(errors).map(([field, message]) => 
-              message ? (
-                <li key={field} className="text-sm text-red-600 flex items-start gap-2">
-                  <span className="text-red-400">•</span>
-                  <span>
-                    <span className="font-medium capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}:</span> {message}
-                  </span>
-                </li>
-              ) : null
-            )}
-          </ul>
-        </div>
-        <button onClick={onClose} className="text-red-400 hover:text-red-600">
-          <XCircle className="w-5 h-5" />
-        </button>
+    <div className="err-alert">
+      <XCircle size={15} color="#e05252" style={{ flexShrink: 0, marginTop: 1 }} />
+      <div className="err-list">
+        <p className="err-alert-title">Please fix {entries.length} error{entries.length > 1 ? 's' : ''} before submitting</p>
+        {/* {entries.map(([k, msg]) => (
+          <p className="err-list-item" key={k}>
+            <b style={{ fontWeight: 500 }}>{k.replace(/([A-Z])/g, ' $1').trim()}:</b> {msg}
+          </p>
+        ))} */}
       </div>
+      <button className="err-close" onClick={onClose}><XCircle size={14} /></button>
     </div>
   );
 }
 
-// Quick Support Button
 function QuickSupportButton() {
-  const [isOpen, setIsOpen] = useState(false);
-  const user = useAuthStore((state) => state.user);
+  const [open, setOpen] = useState(false);
+  const user = useAuthStore(s => s.user);
   const contacts = getAvailableContacts();
 
-  const handleSupport = (type: string, isSecondary: boolean) => {
-    const message = `Hello, I'm having issues with the challenge application form. My email is: ${user?.email || 'Not logged in'}. I need assistance.`;
-    
-    if (type === 'whatsapp') {
-      isSecondary ? openWhatsAppSecondary(message) : openWhatsApp(message);
-    } else {
-      isSecondary ? openTelegramSecondary(message) : openTelegram(message);
-    }
-    setIsOpen(false);
+  const handle = (type: string, isSecondary: boolean) => {
+    const msg = `Hello, I need help with the challenge application. Email: ${user?.email || 'N/A'}`;
+    type === 'whatsapp'
+      ? (isSecondary ? openWhatsAppSecondary(msg) : openWhatsApp(msg))
+      : (isSecondary ? openTelegramSecondary(msg) : openTelegram(msg));
+    setOpen(false);
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-40">
-      {isOpen && (
-        <div className="absolute bottom-16 right-0 mb-2 bg-white rounded-xl shadow-lg border border-gray-200 p-3 min-w-64 animate-in slide-in-from-bottom-2 duration-200">
-          <p className="text-xs text-gray-500 mb-2 px-2">Need help? Contact support:</p>
-          <div className="space-y-1">
-            {contacts.map((contact, index) => (
-              <button
-                key={index}
-                onClick={() => handleSupport(contact.type, !contact.isPrimary)}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-colors ${
-                  contact.type === 'whatsapp'
-                    ? 'hover:bg-green-50 text-green-700'
-                    : 'hover:bg-blue-50 text-blue-700'
-                }`}
-              >
-                {contact.type === 'whatsapp' ? (
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.33 4.94L2.05 22l5.32-1.4c1.46.8 3.11 1.22 4.81 1.22 5.46 0 9.91-4.45 9.91-9.91 0-5.46-4.45-9.91-9.91-9.91z"/>
-                  </svg>
-                ) : (
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
-                  </svg>
-                )}
-                <span className="flex-1">{contact.label}</span>
-              </button>
-            ))}
-          </div>
+    <div className="fab">
+      {open && (
+        <div className="fab-popup">
+          <span className="fab-popup-label">Need help? Contact support:</span>
+          {contacts.map((c, i) => (
+            <button key={i} className="fab-popup-item" onClick={() => handle(c.type, !c.isPrimary)}>
+              <MessageCircle size={13} />{c.label}
+            </button>
+          ))}
         </div>
       )}
-      
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-12 h-12 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg flex items-center justify-center transition-colors"
-      >
-        <HelpCircle className="w-6 h-6" />
+      <button className="fab-btn" onClick={() => setOpen(!open)}>
+        <HelpCircle size={18} />
       </button>
     </div>
   );
 }
 
-// Enhanced Payment Selection Modal with multiple numbers
-function PaymentMethodModal({ 
-  isOpen, 
-  onClose, 
-  onSelect,
-  userEmail 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void; 
-  onSelect: (method: string) => void;
-  userEmail: string;
+function PaymentMethodModal({ isOpen, onClose, onSelect, userEmail }: {
+  isOpen: boolean; onClose: () => void;
+  onSelect: (method: string) => void; userEmail: string;
 }) {
   if (!isOpen) return null;
-
-  const message = whatsAppMessages.payment(userEmail);
   const contacts = getAvailableContacts();
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
-        <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <MessageCircle className="w-8 h-8 text-orange-600" />
-          </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Complete Your Payment</h3>
-          <p className="text-sm text-gray-500">
-            Choose your preferred platform to complete the payment process
-          </p>
-        </div>
-
-        <div className="space-y-3">
-          {contacts.map((contact, index) => (
-            <button
-              key={index}
-              onClick={() => onSelect(`${contact.type}-${contact.isPrimary ? 'primary' : 'secondary'}`)}
-              className={`w-full flex items-center justify-between p-4 rounded-xl transition-colors group ${
-                contact.type === 'whatsapp'
-                  ? contact.isPrimary
-                    ? 'bg-green-50 hover:bg-green-100 border border-green-200'
-                    : 'bg-green-50/50 hover:bg-green-100/70 border border-green-200/50'
-                  : contact.isPrimary
-                    ? 'bg-blue-50 hover:bg-blue-100 border border-blue-200'
-                    : 'bg-blue-50/50 hover:bg-blue-100/70 border border-blue-200/50'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  contact.type === 'whatsapp'
-                    ? contact.isPrimary ? 'bg-green-500' : 'bg-green-400'
-                    : contact.isPrimary ? 'bg-blue-500' : 'bg-blue-400'
-                }`}>
-                  {contact.type === 'whatsapp' ? (
-                    <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.33 4.94L2.05 22l5.32-1.4c1.46.8 3.11 1.22 4.81 1.22 5.46 0 9.91-4.45 9.91-9.91 0-5.46-4.45-9.91-9.91-9.91z"/>
-                    </svg>
-                  ) : (
-                    <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.05-.2-.06-.06-.15-.04-.22-.02-.09.02-1.55.99-4.37 2.89-.41.28-.79.42-1.12.41-.37-.01-1.08-.21-1.61-.38-.65-.21-1.16-.32-1.12-.68.02-.19.28-.38.78-.58 3.04-1.32 5.07-2.19 6.09-2.62 2.9-1.21 3.5-1.42 3.89-1.42.09 0 .28.02.4.12.12.1.15.23.17.33.02.1.02.21 0 .31z"/>
-                    </svg>
-                  )}
-                </div>
-                <div className="text-left">
-                  <p className={`font-semibold text-gray-900 ${
-                    contact.type === 'whatsapp' 
-                      ? 'group-hover:text-green-700' 
-                      : 'group-hover:text-blue-700'
-                  }`}>
-                    {contact.label}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {contact.isPrimary ? 'Primary Support' : 'Secondary Support'}
-                  </p>
-                </div>
-              </div>
-              <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          ))}
-        </div>
-
-        <button
-          onClick={onClose}
-          className="w-full mt-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-        >
-          I'll do this later
-        </button>
+    <div className="modal-overlay">
+      <div className="modal-card">
+        <div className="modal-icon-wrap"><MessageCircle size={22} /></div>
+        <p className="modal-title">Complete Payment</p>
+        <p className="modal-sub">Choose your preferred platform to proceed with payment.</p>
+        {contacts.map((c, i) => (
+          <button
+            key={i}
+            className="contact-btn"
+            onClick={() => onSelect(`${c.type}-${c.isPrimary ? 'primary' : 'secondary'}`)}
+          >
+            <span className="contact-btn-icon"><MessageCircle size={15} /></span>
+            <span>
+              <p className="contact-btn-label">{c.label}</p>
+              <p className="contact-btn-sub">{c.isPrimary ? 'Primary Support' : 'Secondary Support'}</p>
+            </span>
+            <span className="contact-btn-arrow">›</span>
+          </button>
+        ))}
+        <button className="modal-later" onClick={onClose}>I'll do this later</button>
       </div>
     </div>
   );
 }
 
-// Contact Support Button Component
-function ContactSupportButton({ 
-  type, 
-  label, 
-  phone, 
-  username,
-  variant = 'primary',
-  isSecondary = false
-}: { 
-  type: 'whatsapp' | 'telegram';
-  label: string;
-  phone?: string;
-  username?: string;
-  variant?: 'primary' | 'secondary';
-  isSecondary?: boolean;
-}) {
-  const user = useAuthStore((state) => state.user);
-  
-  const handleContact = () => {
-    const message = whatsAppMessages.updateApplication(
-      user?.email || '', 
-      user?.profile?.challenge_status || 'pending'
-    );
-    
-    if (type === 'whatsapp') {
-      isSecondary ? openWhatsAppSecondary(message) : openWhatsApp(message, phone);
-    } else {
-      isSecondary ? openTelegramSecondary(message) : openTelegram(message, username);
-    }
-  };
-
-  const isWhatsApp = type === 'whatsapp';
-  const bgColor = variant === 'primary' 
-    ? (isWhatsApp ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600')
-    : (isWhatsApp ? 'bg-green-100 hover:bg-green-200 text-green-700' : 'bg-blue-100 hover:bg-blue-200 text-blue-700');
-
-  return (
-    <button
-      onClick={handleContact}
-      className={`w-full flex items-center justify-center gap-3 p-4 rounded-xl transition-colors ${bgColor} ${
-        variant === 'primary' ? 'text-white' : ''
-      }`}
-    >
-      {isWhatsApp ? (
-        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.33 4.94L2.05 22l5.32-1.4c1.46.8 3.11 1.22 4.81 1.22 5.46 0 9.91-4.45 9.91-9.91 0-5.46-4.45-9.91-9.91-9.91z"/>
-        </svg>
-      ) : (
-        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.05-.2-.06-.06-.15-.04-.22-.02-.09.02-1.55.99-4.37 2.89-.41.28-.79.42-1.12.41-.37-.01-1.08-.21-1.61-.38-.65-.21-1.16-.32-1.12-.68.02-.19.28-.38.78-.58 3.04-1.32 5.07-2.19 6.09-2.62 2.9-1.21 3.5-1.42 3.89-1.42.09 0 .28.02.4.12.12.1.15.23.17.33.02.1.02.21 0 .31z"/>
-        </svg>
-      )}
-      <span className="font-medium">{label}</span>
-    </button>
-  );
-}
-
+/* ─── Main component ────────────────────────────────────────────────────── */
 export default function ApplicationSection({ skipProfileCheck = false }: { skipProfileCheck?: boolean }) {
   const [formData, setFormData] = useState<FormData>({
     fullName: "", address: "", gender: "", age: "", monthlyIncome: "",
@@ -331,202 +363,115 @@ export default function ApplicationSection({ skipProfileCheck = false }: { skipP
     reason: "", participantSignature: "", participantSignatureDate: "",
   });
 
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [submittedEmail, setSubmittedEmail] = useState("");
-  const [hasExistingApplication, setHasExistingApplication] = useState(false);
-  const [existingProfile, setExistingProfile] = useState<any>(null);
-  const [formErrors, setFormErrors] = useState<FormErrors>({});
-  const [showErrorAlert, setShowErrorAlert] = useState(true);
+  const [submitted, setSubmitted]                   = useState(false);
+  const [loading, setLoading]                       = useState(false);
+  const [initialLoading, setInitialLoading]         = useState(true);
+  const [showPaymentModal, setShowPaymentModal]     = useState(false);
+  const [submittedEmail, setSubmittedEmail]         = useState("");
+  const [hasExistingApplication, setHasExisting]   = useState(false);
+  const [existingProfile, setExistingProfile]       = useState<any>(null);
+  const [formErrors, setFormErrors]                 = useState<FormErrors>({});
+  const [showErrorAlert, setShowErrorAlert]         = useState(true);
 
-  const loadUser = useAuthStore((state) => state.loadUser);
-  const user = useAuthStore((state) => state.user);
-  const router = useRouter();
+  const loadUser = useAuthStore(s => s.loadUser);
+  const user     = useAuthStore(s => s.user);
+  const router   = useRouter();
 
-  // Check if user already has an application
   useEffect(() => {
-    const checkExistingApplication = async () => {
-      // If skipProfileCheck is true, don't check for existing application
-      if (skipProfileCheck) {
-        setInitialLoading(false);
-        return;
-      }
-      
-      if (!user) {
-        setInitialLoading(false);
-        return;
-      }
-
+    const check = async () => {
+      if (skipProfileCheck || !user) { setInitialLoading(false); return; }
       try {
-        const response = await apiService.get("/auth/profile/");
-        const profile = response.data;
-        
-        console.log('Profile data in ApplicationSection:', profile); // Debug log
-        
-        const hasFilledForm = !!profile.full_name;
-        const hasPaid = profile.registration_fee_paid && profile.insurance_fee_paid;
-
-        if (hasFilledForm) {
-          setHasExistingApplication(true);
+        const { data: profile } = await apiService.get("/auth/profile/");
+        if (profile.full_name) {
+          setHasExisting(true);
           setExistingProfile(profile);
-
-          if (hasPaid) {
-            router.push("/dashboard");
-            return;
+          if (profile.registration_fee_paid && profile.insurance_fee_paid) {
+            router.push("/dashboard"); return;
           }
-
           setSubmitted(true);
         }
-      } catch (error) {
-        console.error("Error checking application:", error);
+      } catch (e) {
+        console.error(e);
       } finally {
         setInitialLoading(false);
       }
     };
-
-    checkExistingApplication();
-  }, [user, skipProfileCheck]); 
+    check();
+  }, [user, skipProfileCheck]);
 
   const validateForm = (): boolean => {
-    const errors: FormErrors = {};
-    
-    // Required field validation
-    if (!formData.fullName.trim()) errors.fullName = "Full name is required";
-    if (!formData.address.trim()) errors.address = "Address is required";
-    if (!formData.gender) errors.gender = "Please select gender";
-    if (!formData.age) errors.age = "Age is required";
-    if (!formData.monthlyIncome.trim()) errors.monthlyIncome = "Monthly income is required";
-    if (!formData.maritalStatus) errors.maritalStatus = "Please select marital status";
-    if (!formData.contactNumber.trim()) errors.contactNumber = "Contact number is required";
-    if (!formData.email.trim()) {
-      errors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = "Please enter a valid email address";
-    }
-    if (!formData.location.trim()) errors.location = "Location is required";
-    if (!formData.reason.trim()) errors.reason = "Please tell us why we should pick you";
-    
-    // Age validation
-    if (formData.age && (parseInt(formData.age) < 18 || parseInt(formData.age) > 100)) {
-      errors.age = "Age must be between 18 and 100";
-    }
-    
-    // Phone validation
-    if (formData.contactNumber && !/^[\d\s\-+()]{10,}$/.test(formData.contactNumber)) {
-      errors.contactNumber = "Please enter a valid phone number";
-    }
-    
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    const e: FormErrors = {};
+    if (!formData.fullName.trim())    e.fullName      = "Full name is required";
+    if (!formData.address.trim())     e.address       = "Address is required";
+    if (!formData.gender)             e.gender        = "Please select gender";
+    if (!formData.age)                e.age           = "Age is required";
+    if (!formData.monthlyIncome.trim()) e.monthlyIncome = "Monthly income is required";
+    if (!formData.maritalStatus)      e.maritalStatus = "Please select marital status";
+    if (!formData.contactNumber.trim()) e.contactNumber = "Contact number is required";
+    if (!formData.email.trim())       e.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) e.email = "Invalid email address";
+    if (!formData.location.trim())    e.location = "Location is required";
+    if (!formData.reason.trim())      e.reason = "Please tell us why we should pick you";
+    if (formData.age && (parseInt(formData.age) < 18 || parseInt(formData.age) > 100))
+      e.age = "Age must be between 18 and 100";
+    if (formData.contactNumber && !/^[\d\s\-+()]{10,}$/.test(formData.contactNumber))
+      e.contactNumber = "Enter a valid phone number";
+    setFormErrors(e);
+    return Object.keys(e).length === 0;
   };
 
-  const set = (field: keyof FormData) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: e.target.value }));
-    // Clear error for this field when user starts typing
-    if (formErrors[field]) {
-      setFormErrors(prev => ({ ...prev, [field]: undefined }));
-    }
-  };
+  const set = (field: keyof FormData) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+      setFormData(p => ({ ...p, [field]: e.target.value }));
+      if (formErrors[field]) setFormErrors(p => ({ ...p, [field]: undefined }));
+    };
 
-  const handlePaymentMethodSelect = (method: string) => {
+  const handlePaymentSelect = (method: string) => {
     const msg = whatsAppMessages.payment(user?.email || submittedEmail);
-    
-    if (method === 'whatsapp-primary') {
-      openWhatsApp(msg);
-    } else if (method === 'whatsapp-secondary') {
-      openWhatsAppSecondary(msg);
-    } else if (method === 'telegram-primary') {
-      openTelegram(msg);
-    } else if (method === 'telegram-secondary') {
-      openTelegramSecondary(msg);
-    }
-    
+    if (method === 'whatsapp-primary')  openWhatsApp(msg);
+    if (method === 'whatsapp-secondary') openWhatsAppSecondary(msg);
+    if (method === 'telegram-primary')  openTelegram(msg);
+    if (method === 'telegram-secondary') openTelegramSecondary(msg);
     setShowPaymentModal(false);
   };
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    // Validate form
-    if (!validateForm()) {
-      setShowErrorAlert(true);
-      // Scroll to top to show errors
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
-    
-    // Double-check for existing application
-    if (hasExistingApplication) {
-      alert("You already have an active application. Please contact support to make changes.");
-      return;
-    }
-    
-    setLoading(true);
-    setFormErrors({});
-    
+    if (!validateForm()) { setShowErrorAlert(true); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    if (hasExistingApplication) { alert("You already have an active application."); return; }
+
+    setLoading(true); setFormErrors({});
     try {
       await apiService.post("/auth/challenge/submit/", {
-        full_name: formData.fullName,
-        address: formData.address,
-        gender: formData.gender,
-        age: parseInt(formData.age),
-        monthly_income: formData.monthlyIncome,
-        marital_status: formData.maritalStatus,
-        contact_number: formData.contactNumber,
-        email: formData.email,
-        hearing_status: formData.hearingStatus || null,
+        full_name: formData.fullName, address: formData.address, gender: formData.gender,
+        age: parseInt(formData.age), monthly_income: formData.monthlyIncome,
+        marital_status: formData.maritalStatus, contact_number: formData.contactNumber,
+        email: formData.email, hearing_status: formData.hearingStatus || null,
         housing_situation: formData.housingSituation || null,
         preferred_payment_method: formData.preferredPayment || null,
-        location: formData.location,
-        challenge_start_date: formData.startDate || null,
+        location: formData.location, challenge_start_date: formData.startDate || null,
         reason: formData.reason,
         participant_signature: formData.participantSignature || null,
         participant_signature_date: formData.participantSignatureDate || null,
       });
-
       await apiService.patch("/auth/profile/", { status: "payment_pending" });
       await loadUser();
-
-      setSubmitted(true);
-      setSubmittedEmail(formData.email);
-      setShowPaymentModal(true);
-      setHasExistingApplication(true);
-    } catch (error: any) {
-      console.error("Submission error:", error?.response?.data || error);
-      
-      // Handle API validation errors
-      if (error?.response?.data) {
-        const apiErrors = error.response.data;
-        const formattedErrors: FormErrors = {};
-        
-        // Map API error fields to form fields
-        Object.keys(apiErrors).forEach(key => {
-          const fieldName = key as keyof FormData;
-          if (fieldName in formData || key === 'non_field_errors') {
-            if (key === 'non_field_errors') {
-              formattedErrors.general = Array.isArray(apiErrors[key]) 
-                ? apiErrors[key][0] 
-                : apiErrors[key];
-            } else {
-              formattedErrors[fieldName] = Array.isArray(apiErrors[key]) 
-                ? apiErrors[key][0] 
-                : apiErrors[key];
-            }
-          }
+      setSubmitted(true); setSubmittedEmail(formData.email);
+      setShowPaymentModal(true); setHasExisting(true);
+    } catch (err: any) {
+      const apiErrors = err?.response?.data;
+      if (apiErrors) {
+        const fe: FormErrors = {};
+        Object.keys(apiErrors).forEach(k => {
+          const v = Array.isArray(apiErrors[k]) ? apiErrors[k][0] : apiErrors[k];
+          if (k === 'non_field_errors') fe.general = v;
+          else fe[k as keyof FormData] = v;
         });
-        
-        setFormErrors(formattedErrors);
+        setFormErrors(fe);
         setShowErrorAlert(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
-        // Generic error
-        setFormErrors({ 
-          general: "An unexpected error occurred. Please try again or contact support." 
-        });
+        setFormErrors({ general: "Something went wrong. Please try again." });
         setShowErrorAlert(true);
       }
     } finally {
@@ -534,147 +479,112 @@ export default function ApplicationSection({ skipProfileCheck = false }: { skipP
     }
   };
 
-  // Loading state
-  if (initialLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your application...</p>
-        </div>
+  /* ── Loading ── */
+  if (initialLoading) return (
+    <div className="status-page">
+      <style>{STYLES}</style>
+      <div style={{ textAlign: 'center' }}>
+        <svg className="spinner" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.5">
+          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+        </svg>
+        <p style={{ marginTop: 12, fontSize: 12, color: '#aaa', fontFamily: "'DM Sans',sans-serif" }}>Loading your application…</p>
       </div>
-    );
-  }
+    </div>
+  );
 
-  // If user has submitted but not paid (payment pending)
-  if (submitted && hasExistingApplication && existingProfile?.challenge_status === 'payment_pending') {
-    return (
-      <>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 text-center max-w-md w-full">
-            <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-5">
-              <CheckCircle className="w-8 h-8 text-white" />
+  /* ── Payment pending ── */
+  if (submitted && hasExistingApplication && existingProfile?.challenge_status === 'payment_pending') return (
+    <>
+      <style>{STYLES}</style>
+      <div className="status-page">
+        <div className="status-card">
+          <div className="status-icon-wrap">
+            <CheckCircle size={24} color="#fff" />
+          </div>
+          <p className="status-title">Application Submitted</p>
+          <p className="status-body">
+            Your application has been received. Complete your payment to activate your challenge participation.
+          </p>
+          <div className="info-strip">
+            <p className="info-strip-title">Payment Summary</p>
+            <div className="info-row">
+              <span className="info-label">Registration Fee</span>
+              <span className="info-value">$110</span>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Application Submitted!</h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Your application has been received. Please complete your payment to activate your challenge participation.
-            </p>
-            
-            <div className="bg-orange-50 rounded-lg p-4 mb-6">
-              <p className="text-sm text-orange-800 font-medium mb-2">Payment Status: Pending</p>
-              <p className="text-xs text-orange-600">
-                Registration Fee: $110 | Insurance Fee: $110
-              </p>
+            <div className="info-row">
+              <span className="info-label">Insurance Fee</span>
+              <span className="info-value">$110</span>
             </div>
-            
-            <button
-              onClick={() => setShowPaymentModal(true)}
-              className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl transition-colors mb-3"
-            >
-              Proceed to Payment
+            <div className="info-row" style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: 8, marginTop: 4 }}>
+              <span className="info-label" style={{ fontWeight: 600, color: '#555' }}>Total</span>
+              <span className="info-value" style={{ fontWeight: 600 }}>$220</span>
+            </div>
+          </div>
+          <div className="stack">
+            <button className="submit-btn" onClick={() => setShowPaymentModal(true)}>
+              <Send size={14} /> Proceed to Payment
             </button>
-            
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors"
-            >
+            <button className="ghost-btn" onClick={() => router.push('/dashboard')}>
               Go to Dashboard
             </button>
           </div>
         </div>
-        
-        <QuickSupportButton />
-        
-        <PaymentMethodModal
-          isOpen={showPaymentModal}
-          onClose={() => setShowPaymentModal(false)}
-          onSelect={handlePaymentMethodSelect}
-          userEmail={user?.email || submittedEmail}
-        />
-      </>
-    );
-  }
+      </div>
+      <QuickSupportButton />
+      <PaymentMethodModal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} onSelect={handlePaymentSelect} userEmail={user?.email || submittedEmail} />
+    </>
+  );
 
-  // If user has existing application (other statuses)
+  /* ── Existing application (other statuses) ── */
   if (hasExistingApplication && existingProfile) {
     const contacts = getAvailableContacts();
-    
     return (
       <>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-2xl w-full">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertCircle className="w-8 h-8 text-orange-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Application Already Submitted
-              </h2>
-              <p className="text-gray-500">
-                You've already submitted a challenge application. 
-                If you need to make changes, please contact our support team.
-              </p>
+        <style>{STYLES}</style>
+        <div className="status-page">
+          <div className="status-card" style={{ maxWidth: 480 }}>
+            <div className="status-icon-wrap neutral">
+              <AlertCircle size={22} color="#888" />
             </div>
-
-            {/* Show current application status */}
-            <div className="bg-gray-50 rounded-xl p-6 mb-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Application Status</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Status:</span>
-                  <span className="font-medium text-orange-600">
-                    {existingProfile.challenge_status?.replace(/_/g, ' ').toUpperCase() || 'Pending'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Registration Fee:</span>
-                  <span className="font-medium">
-                    {existingProfile.registration_fee_paid ? '✅ Paid' : '⏳ Pending'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Insurance Fee:</span>
-                  <span className="font-medium">
-                    {existingProfile.insurance_fee_paid ? '✅ Paid' : '⏳ Pending'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Submitted:</span>
-                  <span className="font-medium">
-                    {existingProfile.challenge_start_date 
-                      ? new Date(existingProfile.challenge_start_date).toLocaleDateString() 
-                      : 'N/A'}
-                  </span>
-                </div>
+            <p className="status-title">Already Submitted</p>
+            <p className="status-body">
+              You've already submitted a challenge application. Contact support if you need to make any changes.
+            </p>
+            <div className="info-strip" style={{ textAlign: 'left' }}>
+              <p className="info-strip-title">Application Status</p>
+              <div className="info-row">
+                <span className="info-label">Status</span>
+                <span className="info-value orange">
+                  {existingProfile.challenge_status?.replace(/_/g, ' ') || 'Pending'}
+                </span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">Registration Fee</span>
+                <span className="info-value">{existingProfile.registration_fee_paid ? 'Paid ✓' : 'Pending'}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">Insurance Fee</span>
+                <span className="info-value">{existingProfile.insurance_fee_paid ? 'Paid ✓' : 'Pending'}</span>
               </div>
             </div>
-
-            {/* Contact support options */}
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600 text-center">
-                Need to update your information? Contact us through:
-              </p>
-              
-              <div className="grid grid-cols-1 gap-3">
-                {contacts.map((contact, index) => (
-                  <ContactSupportButton
-                    key={index}
-                    type={contact.type}
-                    label={contact.label}
-                    phone={contact.type === 'whatsapp' ? contact.value : undefined}
-                    username={contact.type === 'telegram' ? contact.value : undefined}
-                    variant={contact.isPrimary ? 'primary' : 'secondary'}
-                    isSecondary={!contact.isPrimary}
-                  />
-                ))}
-              </div>
-
-              <button
-                onClick={() => router.push('/dashboard')}
-                className="w-full mt-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors"
-              >
-                Return to Dashboard
-              </button>
+            <p style={{ fontSize: 11.5, color: '#aaa', marginBottom: 10 }}>Need to update your info? Contact us:</p>
+            <div className="stack">
+              {contacts.map((c, i) => (
+                <button key={i} className="contact-btn" onClick={() => {
+                  const msg = whatsAppMessages.updateApplication(user?.email || '', existingProfile.challenge_status || 'pending');
+                  c.type === 'whatsapp'
+                    ? (!c.isPrimary ? openWhatsAppSecondary(msg) : openWhatsApp(msg))
+                    : (!c.isPrimary ? openTelegramSecondary(msg) : openTelegram(msg));
+                }}>
+                  <span className="contact-btn-icon"><MessageCircle size={14} /></span>
+                  <span>
+                    <p className="contact-btn-label">{c.label}</p>
+                    <p className="contact-btn-sub">{c.isPrimary ? 'Primary Support' : 'Secondary Support'}</p>
+                  </span>
+                  <span className="contact-btn-arrow">›</span>
+                </button>
+              ))}
+              <button className="ghost-btn" onClick={() => router.push('/dashboard')}>Return to Dashboard</button>
             </div>
           </div>
         </div>
@@ -683,68 +593,47 @@ export default function ApplicationSection({ skipProfileCheck = false }: { skipP
     );
   }
 
-  // Fresh application form
+  /* ── Fresh form ── */
+  const ic = (field: keyof FormData) => formErrors[field] ? 'err' : '';
+
   return (
     <>
-      <div className="min-h-screen bg-gray-50">
-        <div className="bg-white px-6 py-10 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-500/20 border border-orange-400/30 rounded-full mb-4">
-            <span className="text-xs font-semibold text-orange-600 tracking-wide uppercase">Application Form</span>
-          </div>
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">Ready to Challenge Yourself?</h1>
-          <p className="text-gray-400 text-sm">Fill in your details below. All fields are required unless marked optional.</p>
+      <style>{STYLES}</style>
+      <div className="app-root app-page">
+
+        {/* Hero */}
+        <div className="app-hero">
+          <span className="app-tag">Application Form</span>
+          <h1 className="app-title">Ready to Challenge Yourself?</h1>
+          <p className="app-sub">Fill in your details below. Fields marked * are required.</p>
         </div>
 
-        <div className="max-w-2xl mx-auto px-4 py-8">
-          {/* Error Alert */}
+        <div className="app-body">
+
+          {/* Error alert */}
           {Object.keys(formErrors).length > 0 && showErrorAlert && (
             <ErrorAlert errors={formErrors} onClose={() => setShowErrorAlert(false)} />
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Personal Info */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <form onSubmit={handleSubmit}>
+
+            {/* Personal */}
+            <div className="form-card">
               <SectionHeader icon={User} title="Personal Information" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
+              <div className="grid2">
+                <div className="col-span-2">
                   <Field label="Full Name" required error={formErrors.fullName}>
-                    <input 
-                      type="text" 
-                      required 
-                      value={formData.fullName} 
-                      onChange={set("fullName")} 
-                      placeholder="John Doe" 
-                      className={formErrors.fullName ? errorInputClass : inputClass} 
-                    />
+                    <input type="text" required value={formData.fullName} onChange={set("fullName")} placeholder="John Doe" className={`field-input ${ic("fullName")}`} />
                   </Field>
                 </div>
                 <Field label="Email" required error={formErrors.email}>
-                  <input 
-                    type="email" 
-                    required 
-                    value={formData.email} 
-                    onChange={set("email")} 
-                    placeholder="john@example.com" 
-                    className={formErrors.email ? errorInputClass : inputClass} 
-                  />
+                  <input type="email" required value={formData.email} onChange={set("email")} placeholder="john@example.com" className={`field-input ${ic("email")}`} />
                 </Field>
                 <Field label="Phone Number" required error={formErrors.contactNumber}>
-                  <input 
-                    type="tel" 
-                    required 
-                    value={formData.contactNumber} 
-                    onChange={set("contactNumber")} 
-                    placeholder="+1(546)..." 
-                    className={formErrors.contactNumber ? errorInputClass : inputClass} 
-                  />
+                  <input type="tel" required value={formData.contactNumber} onChange={set("contactNumber")} placeholder="+1 (000) 000-0000" className={`field-input ${ic("contactNumber")}`} />
                 </Field>
                 <Field label="Gender" required error={formErrors.gender}>
-                  <select 
-                    required 
-                    value={formData.gender} 
-                    onChange={set("gender")} 
-                    className={formErrors.gender ? errorInputClass : selectClass}
-                  >
+                  <select required value={formData.gender} onChange={set("gender")} className={`field-select ${ic("gender")}`}>
                     <option value="">Select gender</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
@@ -752,24 +641,10 @@ export default function ApplicationSection({ skipProfileCheck = false }: { skipP
                   </select>
                 </Field>
                 <Field label="Age" required error={formErrors.age}>
-                  <input 
-                    type="number" 
-                    required 
-                    value={formData.age} 
-                    onChange={set("age")} 
-                    placeholder="25" 
-                    min="18" 
-                    max="100"
-                    className={formErrors.age ? errorInputClass : inputClass} 
-                  />
+                  <input type="number" required value={formData.age} onChange={set("age")} placeholder="25" min="18" max="100" className={`field-input ${ic("age")}`} />
                 </Field>
                 <Field label="Marital Status" required error={formErrors.maritalStatus}>
-                  <select 
-                    required 
-                    value={formData.maritalStatus} 
-                    onChange={set("maritalStatus")} 
-                    className={formErrors.maritalStatus ? errorInputClass : selectClass}
-                  >
+                  <select required value={formData.maritalStatus} onChange={set("maritalStatus")} className={`field-select ${ic("maritalStatus")}`}>
                     <option value="">Select status</option>
                     <option value="single">Single</option>
                     <option value="married">Married</option>
@@ -778,54 +653,32 @@ export default function ApplicationSection({ skipProfileCheck = false }: { skipP
                   </select>
                 </Field>
                 <Field label="Hearing Status" error={formErrors.hearingStatus}>
-                  <select 
-                    value={formData.hearingStatus} 
-                    onChange={set("hearingStatus")} 
-                    className={selectClass}
-                  >
-                    <option value="">Select hearing status (Optional)</option>
+                  <select value={formData.hearingStatus} onChange={set("hearingStatus")} className="field-select">
+                    <option value="">Optional</option>
                     <option value="good">Good</option>
-                    <option value="partial">Partial Hearing Loss</option>
-                    <option value="full">Full Hearing Loss</option>
-                    <option value="impaired">Hearing Impaired</option>
+                    <option value="partial">Partial Loss</option>
+                    <option value="full">Full Loss</option>
+                    <option value="impaired">Impaired</option>
                   </select>
                 </Field>
               </div>
             </div>
 
             {/* Location */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <div className="form-card">
               <SectionHeader icon={MapPin} title="Location & Housing" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
+              <div className="grid2">
+                <div className="col-span-2">
                   <Field label="Address" required error={formErrors.address}>
-                    <input 
-                      type="text" 
-                      required 
-                      value={formData.address} 
-                      onChange={set("address")} 
-                      placeholder="123 Main St, Los Angeles, CA" 
-                      className={formErrors.address ? errorInputClass : inputClass} 
-                    />
+                    <input type="text" required value={formData.address} onChange={set("address")} placeholder="123 Main St, Los Angeles, CA" className={`field-input ${ic("address")}`} />
                   </Field>
                 </div>
                 <Field label="City / Location" required error={formErrors.location}>
-                  <input 
-                    type="text" 
-                    required 
-                    value={formData.location} 
-                    onChange={set("location")} 
-                    placeholder="Los Angeles" 
-                    className={formErrors.location ? errorInputClass : inputClass} 
-                  />
+                  <input type="text" required value={formData.location} onChange={set("location")} placeholder="Los Angeles" className={`field-input ${ic("location")}`} />
                 </Field>
                 <Field label="Housing Situation" error={formErrors.housingSituation}>
-                  <select 
-                    value={formData.housingSituation} 
-                    onChange={set("housingSituation")} 
-                    className={selectClass}
-                  >
-                    <option value="">Select housing situation (Optional)</option>
+                  <select value={formData.housingSituation} onChange={set("housingSituation")} className="field-select">
+                    <option value="">Optional</option>
                     <option value="own">Own House</option>
                     <option value="rent">Rented</option>
                     <option value="lease">Leasing</option>
@@ -837,26 +690,15 @@ export default function ApplicationSection({ skipProfileCheck = false }: { skipP
             </div>
 
             {/* Financial */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <div className="form-card">
               <SectionHeader icon={DollarSign} title="Financial Information" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid2">
                 <Field label="Monthly Income" required error={formErrors.monthlyIncome}>
-                  <input 
-                    type="text" 
-                    required 
-                    value={formData.monthlyIncome} 
-                    onChange={set("monthlyIncome")} 
-                    placeholder="e.g. $150,000" 
-                    className={formErrors.monthlyIncome ? errorInputClass : inputClass} 
-                  />
+                  <input type="text" required value={formData.monthlyIncome} onChange={set("monthlyIncome")} placeholder="e.g. $150,000" className={`field-input ${ic("monthlyIncome")}`} />
                 </Field>
                 <Field label="Preferred Payment Method" error={formErrors.preferredPayment}>
-                  <select 
-                    value={formData.preferredPayment} 
-                    onChange={set("preferredPayment")} 
-                    className={selectClass}
-                  >
-                    <option value="">Select payment method (Optional)</option>
+                  <select value={formData.preferredPayment} onChange={set("preferredPayment")} className="field-select">
+                    <option value="">Optional</option>
                     <option value="bank">Bank Transfer</option>
                     <option value="btc">Bitcoin</option>
                     <option value="eth">Ethereum</option>
@@ -865,76 +707,47 @@ export default function ApplicationSection({ skipProfileCheck = false }: { skipP
                   </select>
                 </Field>
                 <Field label="Challenge Start Date" error={formErrors.startDate}>
-                  <input 
-                    type="date" 
-                    value={formData.startDate} 
-                    onChange={set("startDate")} 
-                    className={inputClass} 
-                  />
+                  <input type="date" value={formData.startDate} onChange={set("startDate")} className="field-input" />
                 </Field>
               </div>
             </div>
 
             {/* Declaration */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <div className="form-card">
               <SectionHeader icon={FileText} title="Declaration & Signature" />
-              <div className="space-y-4">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <Field label="Why should we pick you?" required error={formErrors.reason}>
-                  <textarea 
-                    required 
-                    value={formData.reason} 
-                    onChange={set("reason")} 
-                    rows={4} 
-                    placeholder="Tell us why you're the right candidate..." 
-                    className={formErrors.reason ? errorInputClass : inputClass} 
-                  />
+                  <textarea required value={formData.reason} onChange={set("reason")} placeholder="Tell us what makes you the right candidate…" className={`field-textarea ${ic("reason")}`} />
                 </Field>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid2">
                   <Field label="Signature" error={formErrors.participantSignature}>
-                    <input 
-                      type="text" 
-                      value={formData.participantSignature} 
-                      onChange={set("participantSignature")} 
-                      placeholder="Enter your full name as signature" 
-                      className={inputClass} 
-                    />
+                    <input type="text" value={formData.participantSignature} onChange={set("participantSignature")} placeholder="Full name as signature" className="field-input" />
                   </Field>
                   <Field label="Signature Date" error={formErrors.participantSignatureDate}>
-                    <input 
-                      type="date" 
-                      value={formData.participantSignatureDate} 
-                      onChange={set("participantSignatureDate")} 
-                      className={inputClass} 
-                    />
+                    <input type="date" value={formData.participantSignatureDate} onChange={set("participantSignatureDate")} className="field-input" />
                   </Field>
                 </div>
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-4 bg-orange-500 hover:bg-orange-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-2xl flex items-center justify-center gap-2 transition-colors"
-            >
+            <button type="submit" disabled={loading} className="submit-btn">
               {loading ? (
-                <span className="flex items-center gap-2">
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                  </svg>
-                  Submitting...
-                </span>
-              ) : (
                 <>
-                  <Send className="w-4 h-4" />
-                  Submit Application
+                  <svg className="spinner" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                  Submitting…
                 </>
+              ) : (
+                <><Send size={14} /> Submit Application</>
               )}
             </button>
           </form>
         </div>
       </div>
+
       <QuickSupportButton />
+      <PaymentMethodModal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} onSelect={handlePaymentSelect} userEmail={user?.email || submittedEmail} />
     </>
   );
 }

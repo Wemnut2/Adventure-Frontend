@@ -1,184 +1,7 @@
-// // // components/sections/HowItWorks.tsx
-// // import { FileText, Mail, DoorOpen, Clock, DoorClosed, Wallet } from "lucide-react";
-
-// // const steps = [
-// //   {
-// //     icon: FileText,
-// //     title: "Apply & Get Selected",
-// //     description: "Submit your application and complete the screening process",
-// //     step: "01",
-// //   },
-// //   {
-// //     icon: Mail,
-// //     title: "Receive Instructions",
-// //     description: "Get detailed guidelines and preparation materials",
-// //     step: "02",
-// //   },
-// //   {
-// //     icon: DoorOpen,
-// //     title: "Enter Isolation",
-// //     description: "Step into the controlled environment space",
-// //     step: "03",
-// //   },
-// //   {
-// //     icon: Clock,
-// //     title: "Stay As Long As Possible",
-// //     description: "Endure solitude with no external contact",
-// //     step: "04",
-// //   },
-// //   {
-// //     icon: DoorClosed,
-// //     title: "Exit Anytime",
-// //     description: "Freedom to leave whenever you choose",
-// //     step: "05",
-// //   },
-// //   {
-// //     icon: Wallet,
-// //     title: "Earn Rewards",
-// //     description: "Get paid based on your duration completed",
-// //     step: "06",
-// //   },
-// // ];
-
-// // export default function HowItWorks() {
-// //   return (
-// //     <section id="how-it-works" className="py-20 bg-white">
-// //       <div className="container-custom">
-// //         <div className="max-w-3xl mx-auto text-center mb-12">
-// //           <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-50 border border-orange-200 mb-4">
-// //             <span className="text-xs font-semibold text-orange-600 tracking-wide">
-// //               HOW IT WORKS
-// //             </span>
-// //           </div>
-// //           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900 mb-4">
-// //             Simple 6-Step Process
-// //           </h2>
-// //           <p className="text-gray-600 text-lg">
-// //             From application to reward — here's how the journey unfolds
-// //           </p>
-// //         </div>
-
-// //         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-// //           {steps.map((step, index) => (
-// //             <div key={index} className="group relative p-6 bg-gray-50 border border-gray-200 hover:border-orange-200 transition-all">
-// //               {/* Step Number */}
-// //               <div className="absolute top-4 right-4 text-4xl font-bold text-gray-200 group-hover:text-orange-100 transition-colors">
-// //                 {step.step}
-// //               </div>
-// //               <step.icon className="w-8 h-8 text-orange-500 mb-4" />
-// //               <h3 className="text-lg font-bold text-gray-900 mb-2">{step.title}</h3>
-// //               <p className="text-sm text-gray-600 leading-relaxed">{step.description}</p>
-// //             </div>
-// //           ))}
-// //         </div>
-
-// //         {/* Note */}
-// //         <div className="mt-10 text-center">
-// //           <p className="text-sm text-gray-500">
-// //             ⚡ Early exit allowed at any time. Partial rewards based on duration completed.
-// //           </p>
-// //         </div>
-// //       </div>
-// //     </section>
-// //   );
-// // }
-
-
-// import { FileText, Mail, DoorOpen, Clock, LogOut, Wallet } from "lucide-react";
-
-// const steps = [
-//   {
-//     icon: FileText,
-//     title: "Apply & Get Selected",
-//     description: "Submit your application and complete the screening process.",
-//     step: "01",
-//   },
-//   {
-//     icon: Mail,
-//     title: "Receive Instructions",
-//     description: "Get detailed guidelines and preparation materials.",
-//     step: "02",
-//   },
-//   {
-//     icon: DoorOpen,
-//     title: "Enter Isolation",
-//     description: "Step into the controlled environment space.",
-//     step: "03",
-//   },
-//   {
-//     icon: Clock,
-//     title: "Stay As Long As Possible",
-//     description: "Endure solitude with no external contact.",
-//     step: "04",
-//   },
-//   {
-//     icon: LogOut,
-//     title: "Exit Anytime",
-//     description: "Freedom to leave whenever you choose.",
-//     step: "05",
-//   },
-//   {
-//     icon: Wallet,
-//     title: "Earn Rewards",
-//     description: "Get paid based on your duration completed.",
-//     step: "06",
-//   },
-// ];
-
-// export default function HowItWorks() {
-//   return (
-//     <section id="how-it-works" className="py-20 bg-white">
-//       <div className="container-custom">
-
-//         {/* Header */}
-//         <div className="max-w-3xl mx-auto text-center mb-12">
-//           <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-50 border border-orange-200 rounded-sm mb-4">
-//             <span className="text-xs font-semibold text-orange-600 tracking-wide uppercase">
-//               How It Works
-//             </span>
-//           </div>
-//           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900 mb-4">
-//             Simple 6-Step Process
-//           </h2>
-//           <p className="text-gray-500 text-lg">
-//             From application to reward — here's how the journey unfolds
-//           </p>
-//         </div>
-
-//         {/* Steps grid */}
-//         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-//           {steps.map((step, i) => (
-//             <div
-//               key={i}
-//               className="group relative bg-gray-50 border border-gray-200 rounded-xl p-6 hover:border-orange-200 transition-colors overflow-hidden"
-//             >
-//               {/* Background step number */}
-//               <span className="absolute top-4 right-4 text-5xl font-bold text-gray-100 group-hover:text-orange-50 transition-colors leading-none select-none">
-//                 {step.step}
-//               </span>
-
-//               <step.icon className="w-7 h-7 text-orange-500 mb-4 relative z-10" />
-//               <h3 className="text-base font-bold text-gray-900 mb-2 relative z-10">
-//                 {step.title}
-//               </h3>
-//               <p className="text-sm text-gray-500 leading-relaxed relative z-10">
-//                 {step.description}
-//               </p>
-//             </div>
-//           ))}
-//         </div>
-
-//         {/* Note */}
-//         <p className="text-center text-sm text-gray-400 mt-10">
-//           ⚡ Early exit allowed at any time. Partial rewards based on duration completed.
-//         </p>
-
-//       </div>
-//     </section>
-//   );
-// }
+"use client";
 
 import { FileText, Mail, DoorOpen, Clock, LogOut, Wallet } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 const steps = [
   {
@@ -186,73 +9,214 @@ const steps = [
     title: "Apply & Get Selected",
     description: "Submit your application and complete the screening process.",
     step: "01",
+    color: "#f97316"
   },
   {
     icon: Mail,
     title: "Receive Instructions",
     description: "Get detailed guidelines and preparation materials.",
     step: "02",
+    color: "#fb923c"
   },
   {
     icon: DoorOpen,
     title: "Enter Isolation",
     description: "Step into the controlled environment space.",
     step: "03",
+    color: "#fdba74"
   },
   {
     icon: Clock,
     title: "Stay As Long As Possible",
     description: "Endure solitude with no external contact.",
     step: "04",
+    color: "#f97316"
   },
   {
     icon: LogOut,
     title: "Exit Anytime",
     description: "Freedom to leave whenever you choose.",
     step: "05",
+    color: "#fb923c"
   },
   {
     icon: Wallet,
     title: "Earn Rewards",
     description: "Get paid based on your duration completed.",
     step: "06",
+    color: "#fdba74"
   },
 ];
 
 export default function HowItWorks() {
-  return (
-    <section id="how-it-works" className="py-20 bg-white">
-      <div className="container-custom">
+  const sectionRef = useRef<HTMLElement>(null);
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    const cards = document.querySelectorAll('.step-card');
+    cards.forEach((card) => observer.observe(card));
+
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <section ref={sectionRef} id="how-it-works" className="section-spacing bg-white">
+      <style>{`
+        .step-card {
+          opacity: 0;
+          transform: translateY(20px);
+          transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+          background: #fafafa;
+          border: 1px solid rgba(0, 0, 0, 0.08);
+          border-radius: 16px;
+          padding: 28px 24px;
+          overflow: hidden;
+        }
+
+        .step-card.visible {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        .step-card:hover {
+          background: white;
+          border-color: rgba(249, 115, 22, 0.2);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+        }
+
+        .step-card:hover .step-icon {
+          transform: scale(1.1) rotate(5deg);
+        }
+
+        .step-number {
+          position: absolute;
+          top: 16px;
+          right: 20px;
+          font-size: 56px;
+          font-weight: 700;
+          color: rgba(0, 0, 0, 0.03);
+          font-family: 'DM Serif Display', serif;
+          line-height: 1;
+          transition: color 0.3s ease;
+        }
+
+        .step-card:hover .step-number {
+          color: rgba(249, 115, 22, 0.08);
+        }
+
+        .step-icon {
+          width: 48px;
+          height: 48px;
+          border-radius: 12px;
+          background: linear-gradient(135deg, #fff 0%, #fafafa 100%);
+          border: 1px solid rgba(0, 0, 0, 0.08);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 20px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          color: #f97316;
+          position: relative;
+          z-index: 2;
+        }
+
+        .section-header {
+          text-align: center;
+          max-width: 700px;
+          margin: 0 auto 64px;
+        }
+
+        .section-badge {
+          display: inline-block;
+          padding: 4px 14px;
+          background: rgba(249, 115, 22, 0.08);
+          border: 1px solid rgba(249, 115, 22, 0.15);
+          border-radius: 30px;
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #f97316;
+          margin-bottom: 16px;
+        }
+
+        .section-title {
+          font-family: 'DM Serif Display', serif;
+          font-size: 42px;
+          color: #1a1a1a;
+          letter-spacing: -0.02em;
+          margin-bottom: 12px;
+        }
+
+        .section-subtitle {
+          font-size: 16px;
+          color: #888;
+          line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+          .section-title {
+            font-size: 32px;
+          }
+          .step-card {
+            padding: 20px;
+          }
+        }
+
+        .note-banner {
+          margin-top: 48px;
+          padding: 16px 24px;
+          background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+          border: 1px solid rgba(0, 0, 0, 0.06);
+          border-radius: 12px;
+          text-align: center;
+        }
+
+        .note-banner p {
+          font-size: 13px;
+          color: #666;
+        }
+
+        .note-banner span {
+          color: #f97316;
+          font-weight: 600;
+        }
+      `}</style>
+
+      <div className="landing-container">
         {/* Header */}
-        <div className="max-w-3xl mx-auto text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-50 border border-orange-200 rounded-sm mb-4">
-            <span className="text-xs font-semibold text-orange-600 tracking-wide uppercase">
-              How It Works
-            </span>
-          </div>
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900 mb-4">
-            Simple 6-Step Process
-          </h2>
-          <p className="text-gray-500 text-lg">
-            From application to reward — here's how the journey unfolds
+        <div className="section-header">
+          <span className="section-badge">How It Works</span>
+          <h2 className="section-title">Simple 6-Step Process</h2>
+          <p className="section-subtitle">
+            From application to reward — here's how your journey unfolds
           </p>
         </div>
 
-        {/* Steps grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {/* Steps Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {steps.map((step, i) => (
-            <div
-              key={i}
-              className="group relative bg-gray-50 border border-gray-200 rounded-xl p-6 hover:border-orange-200 transition-colors overflow-hidden"
+            <div 
+              key={i} 
+              className="step-card hover-lift"
+              style={{ transitionDelay: `${i * 0.05}s` }}
             >
-              {/* Background step number */}
-              <span className="absolute top-4 right-4 text-5xl font-bold text-gray-100 group-hover:text-orange-50 transition-colors leading-none select-none">
-                {step.step}
-              </span>
-
-              <step.icon className="w-7 h-7 text-orange-500 mb-4 relative z-10" />
-              <h3 className="text-base font-bold text-gray-900 mb-2 relative z-10">
+              <span className="step-number">{step.step}</span>
+              <div className="step-icon">
+                <step.icon size={22} />
+              </div>
+              <h3 className="text-base font-semibold text-gray-900 mb-2 relative z-10">
                 {step.title}
               </h3>
               <p className="text-sm text-gray-500 leading-relaxed relative z-10">
@@ -263,10 +227,11 @@ export default function HowItWorks() {
         </div>
 
         {/* Note */}
-        <p className="text-center text-sm text-gray-400 mt-10">
-          ⚡ Early exit allowed at any time. Partial rewards based on duration completed.
-        </p>
-
+        <div className="note-banner">
+          <p>
+            <span>⚡ Flexible Exit:</span> Leave anytime. Rewards based on duration completed.
+          </p>
+        </div>
       </div>
     </section>
   );

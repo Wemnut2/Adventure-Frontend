@@ -2,38 +2,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card } from '@/layout/components/Card';
-import { Button } from '@/layout/components/Button';
 import {
-  Users,
-  Briefcase,
-  DollarSign,
-  CheckCircle,
-  Clock,
-  TrendingUp,
-  TrendingDown,
-  RefreshCw,
-  ArrowUpRight,
-  ArrowDownRight,
-  Eye,
-  MoreHorizontal,
-  CheckSquare
+  Users, Briefcase, DollarSign, CheckCircle,
+  Clock, TrendingUp, ArrowUpRight, ArrowDownRight,
+  RefreshCw, CheckSquare,
 } from 'lucide-react';
 import { adminService } from '@/libs/services/admin.service';
 import { formatCurrency } from '@/libs/utils/format';
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts';
 
 interface DashboardStats {
@@ -53,276 +31,451 @@ export default function ModernAdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('week');
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  useEffect(() => { fetchDashboardData(); }, []);
 
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
       const data = await adminService.getDashboardStats();
       setStats(data);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
   };
 
   const statCards = [
-    {
-      title: 'Total Users',
-      value: stats?.total_users || 0,
-      change: '+12.5%',
-      trend: 'up',
-      icon: Users,
-      color: 'from-blue-500 to-blue-600',
-      bgColor: 'bg-blue-50',
-      iconColor: 'text-blue-600'
-    },
-    {
-      title: 'Active Investments',
-      value: stats?.active_investments || 0,
-      change: '+8.2%',
-      trend: 'up',
-      icon: Briefcase,
-      color: 'from-green-500 to-green-600',
-      bgColor: 'bg-green-50',
-      iconColor: 'text-green-600'
-    },
-    {
-      title: 'Total Volume',
-      value: formatCurrency(stats?.total_volume || 0),
-      change: '+15.3%',
-      trend: 'up',
-      icon: DollarSign,
-      color: 'from-purple-500 to-purple-600',
-      bgColor: 'bg-purple-50',
-      iconColor: 'text-purple-600'
-    },
-    {
-      title: 'Completed Tasks',
-      value: stats?.completed_tasks || 0,
-      change: '+23.1%',
-      trend: 'up',
-      icon: CheckCircle,
-      color: 'from-yellow-500 to-yellow-600',
-      bgColor: 'bg-yellow-50',
-      iconColor: 'text-yellow-600'
-    },
-    {
-      title: 'Pending Approvals',
-      value: stats?.pending_approvals || 0,
-      change: '-5.4%',
-      trend: 'down',
-      icon: Clock,
-      color: 'from-red-500 to-red-600',
-      bgColor: 'bg-red-50',
-      iconColor: 'text-red-600'
-    },
-    {
-      title: 'Challenge Participants',
-      value: stats?.challenge_participants || 0,
-      change: '+18.7%',
-      trend: 'up',
-      icon: TrendingUp,
-      color: 'from-indigo-500 to-indigo-600',
-      bgColor: 'bg-indigo-50',
-      iconColor: 'text-indigo-600'
-    }
+    { title: 'Total Users',            value: stats?.total_users ?? 0,                       change: '+12.5%', trend: 'up',   icon: Users },
+    { title: 'Active Investments',     value: stats?.active_investments ?? 0,                 change: '+8.2%',  trend: 'up',   icon: Briefcase },
+    { title: 'Total Volume',           value: formatCurrency(stats?.total_volume ?? 0),       change: '+15.3%', trend: 'up',   icon: DollarSign },
+    { title: 'Completed Tasks',        value: stats?.completed_tasks ?? 0,                    change: '+23.1%', trend: 'up',   icon: CheckCircle },
+    { title: 'Pending Approvals',      value: stats?.pending_approvals ?? 0,                  change: '-5.4%',  trend: 'down', icon: Clock },
+    { title: 'Challenge Participants', value: stats?.challenge_participants ?? 0,              change: '+18.7%', trend: 'up',   icon: TrendingUp },
   ];
 
   const chartData = [
-    { name: 'Mon', users: 400, revenue: 2400, tasks: 24 },
-    { name: 'Tue', users: 450, revenue: 2800, tasks: 28 },
-    { name: 'Wed', users: 480, revenue: 3200, tasks: 32 },
-    { name: 'Thu', users: 520, revenue: 3800, tasks: 38 },
-    { name: 'Fri', users: 580, revenue: 4200, tasks: 42 },
-    { name: 'Sat', users: 620, revenue: 4800, tasks: 48 },
-    { name: 'Sun', users: 650, revenue: 5200, tasks: 52 }
+    { name: 'Mon', users: 400, revenue: 2400 },
+    { name: 'Tue', users: 450, revenue: 2800 },
+    { name: 'Wed', users: 480, revenue: 3200 },
+    { name: 'Thu', users: 520, revenue: 3800 },
+    { name: 'Fri', users: 580, revenue: 4200 },
+    { name: 'Sat', users: 620, revenue: 4800 },
+    { name: 'Sun', users: 650, revenue: 5200 },
   ];
 
   const pieData = [
-    { name: 'Active Users', value: stats?.active_users || 0, color: '#f97316' },
-    { name: 'Inactive Users', value: stats?.inactive_users || 0, color: '#94a3b8' },
-    { name: 'Subscribed', value: stats?.subscribed_users || 0, color: '#10b981' }
+    { name: 'Active',     value: stats?.active_users     ?? 0, color: '#f97316' },
+    { name: 'Inactive',   value: stats?.inactive_users   ?? 0, color: '#e5e5e5' },
+    { name: 'Subscribed', value: stats?.subscribed_users ?? 0, color: '#1a1a1a' },
   ];
 
   const recentActivities = [
-    { id: 1, user: 'John Doe', action: 'Completed investment', amount: 5000, time: '5 min ago', status: 'success' },
-    { id: 2, user: 'Jane Smith', action: 'Started new task', amount: null, time: '1 hour ago', status: 'info' },
-    { id: 3, user: 'Mike Johnson', action: 'Withdrawal request', amount: 2500, time: '2 hours ago', status: 'warning' },
-    { id: 4, user: 'Sarah Williams', action: 'Registered new account', amount: null, time: '3 hours ago', status: 'success' },
+    { id: 1, user: 'John Doe',       action: 'Completed investment',    amount: 5000, time: '5 min ago',   status: 'success' },
+    { id: 2, user: 'Jane Smith',     action: 'Started new task',        amount: null, time: '1 hour ago',  status: 'info' },
+    { id: 3, user: 'Mike Johnson',   action: 'Withdrawal request',      amount: 2500, time: '2 hours ago', status: 'warning' },
+    { id: 4, user: 'Sarah Williams', action: 'Registered new account',  amount: null, time: '3 hours ago', status: 'success' },
   ];
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-100px)]">
-        <div className="text-center">
-          <div className="relative">
-            <div className="h-16 w-16 animate-spin rounded-full border-4 border-orange-200 border-t-orange-600"></div>
-          </div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - 100px)', fontFamily: "'DM Sans', sans-serif" }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', border: '2.5px solid #f0ede9', borderTopColor: '#f97316', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
+          <p style={{ marginTop: 14, fontSize: 12.5, color: '#999' }}>Loading dashboard…</p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold gradient-text">Dashboard</h1>
-          <p className="mt-1 text-gray-600">Welcome back! Here&apos;s what&apos;s happening today.</p>
-        </div>
-        <div className="flex gap-3">
-          <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value)}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-orange-500 focus:outline-none"
-          >
-            <option value="day">Today</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="year">This Year</option>
-          </select>
-          <Button variant="outline" onClick={fetchDashboardData} className="gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
-        </div>
-      </div>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {statCards.map((stat, index) => {
-          const Icon = stat.icon;
-          const TrendIcon = stat.trend === 'up' ? ArrowUpRight : ArrowDownRight;
-          return (
-            <Card key={index} className="group relative overflow-hidden transition-all hover:shadow-xl">
-              <div className={`absolute right-0 top-0 h-20 w-20 -translate-y-8 translate-x-8 rounded-full bg-gradient-to-br ${stat.color} opacity-10 blur-2xl transition-all group-hover:scale-150`} />
-              <div className="relative p-4">
-                <div className="flex items-center justify-between">
-                  <div className={`rounded-xl p-2 ${stat.bgColor}`}>
-                    <Icon className={`h-5 w-5 ${stat.iconColor}`} />
-                  </div>
-                  <div className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${
-                    stat.trend === 'up' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
-                  }`}>
-                    <TrendIcon className="h-3 w-3" />
-                    {stat.change}
-                  </div>
-                </div>
-                <p className="mt-3 text-2xl font-bold">{stat.value}</p>
-                <p className="text-sm text-gray-600">{stat.title}</p>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
+        .dash-root {
+          font-family: 'DM Sans', sans-serif;
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+          animation: fadeUp 0.3s ease;
+        }
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Platform Activity</h2>
-            <button className="text-sm text-orange-600 hover:text-orange-700">View Details →</button>
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .dash-card {
+          background: #fff;
+          border: 1px solid rgba(0,0,0,0.07);
+          border-radius: 14px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        .stat-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+          gap: 14px;
+        }
+
+        .stat-card {
+          background: #fff;
+          border: 1px solid rgba(0,0,0,0.07);
+          border-radius: 14px;
+          padding: 18px 16px;
+          transition: box-shadow 0.18s, transform 0.18s;
+        }
+
+        .stat-card:hover {
+          box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+          transform: translateY(-1px);
+        }
+
+        .stat-icon-wrap {
+          width: 32px; height: 32px;
+          border-radius: 8px;
+          background: #f5f5f5;
+          display: flex; align-items: center; justify-content: center;
+          color: #555;
+        }
+
+        .stat-value {
+          font-size: 22px;
+          font-weight: 600;
+          color: #1a1a1a;
+          margin-top: 14px;
+          letter-spacing: -0.02em;
+        }
+
+        .stat-title {
+          font-size: 11.5px;
+          color: #999;
+          margin-top: 3px;
+        }
+
+        .stat-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 2px;
+          font-size: 10.5px;
+          font-weight: 500;
+          border-radius: 20px;
+          padding: 2px 7px;
+        }
+
+        .stat-badge.up   { background: #f0fdf4; color: #16a34a; }
+        .stat-badge.down { background: #fff5f5; color: #e05252; }
+
+        .chart-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 14px;
+        }
+
+        @media (max-width: 900px) { .chart-grid { grid-template-columns: 1fr; } }
+
+        .card-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 16px 20px 0;
+        }
+
+        .card-title {
+          font-size: 13px;
+          font-weight: 600;
+          color: #1a1a1a;
+        }
+
+        .card-link {
+          font-size: 11.5px;
+          color: #f97316;
+          text-decoration: none;
+          font-weight: 500;
+          transition: opacity 0.15s;
+        }
+        .card-link:hover { opacity: 0.75; }
+
+        .bottom-grid {
+          display: grid;
+          grid-template-columns: 1fr 320px;
+          gap: 14px;
+        }
+
+        @media (max-width: 900px) { .bottom-grid { grid-template-columns: 1fr; } }
+
+        .activity-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 11px 0;
+          border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .activity-item:last-child { border-bottom: none; }
+
+        .activity-dot {
+          width: 6px; height: 6px;
+          border-radius: 50%;
+          flex-shrink: 0;
+        }
+
+        .activity-user { font-size: 12.5px; font-weight: 500; color: #1a1a1a; }
+        .activity-action { font-size: 11.5px; color: #999; margin-top: 1px; }
+        .activity-time { font-size: 10.5px; color: #ccc; }
+        .activity-amount { font-size: 12px; font-weight: 600; color: #16a34a; }
+
+        .qa-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+          padding: 16px;
+        }
+
+        .qa-btn {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          height: 80px;
+          border-radius: 10px;
+          cursor: pointer;
+          font-size: 11.5px;
+          font-weight: 500;
+          font-family: 'DM Sans', sans-serif;
+          transition: all 0.15s;
+          border: 1px solid rgba(0,0,0,0.1);
+          background: transparent;
+          color: #555;
+        }
+
+        .qa-btn:hover {
+          background: #fafafa;
+          border-color: rgba(0,0,0,0.18);
+          color: #1a1a1a;
+        }
+
+        .qa-btn.primary {
+          background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+          border-color: transparent;
+          color: #fff;
+        }
+
+        .qa-btn.primary:hover { opacity: 0.9; }
+
+        .page-header { display: flex; align-items: flex-end; justify-content: space-between; }
+
+        .page-title {
+          font-family: 'DM Serif Display', serif;
+          font-size: 26px;
+          color: #1a1a1a;
+          letter-spacing: -0.02em;
+        }
+
+        .page-subtitle { font-size: 12px; color: #999; margin-top: 3px; }
+
+        .header-controls { display: flex; gap: 8px; }
+
+        .time-select {
+          background: #fafafa;
+          border: 1px solid rgba(0,0,0,0.1);
+          border-radius: 8px;
+          padding: 7px 12px;
+          font-size: 12px;
+          color: #555;
+          font-family: 'DM Sans', sans-serif;
+          outline: none;
+          cursor: pointer;
+        }
+
+        .refresh-btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: #fafafa;
+          border: 1px solid rgba(0,0,0,0.1);
+          border-radius: 8px;
+          padding: 7px 14px;
+          font-size: 12px;
+          color: #555;
+          font-family: 'DM Sans', sans-serif;
+          cursor: pointer;
+          transition: background 0.15s, border-color 0.15s;
+        }
+        .refresh-btn:hover { background: #f0f0f0; border-color: rgba(0,0,0,0.18); color: #1a1a1a; }
+
+        .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+        .recharts-tooltip-wrapper .recharts-default-tooltip {
+          font-family: 'DM Sans', sans-serif !important;
+          font-size: 12px !important;
+          border-radius: 8px !important;
+          border: 1px solid rgba(0,0,0,0.08) !important;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.07) !important;
+        }
+      `}</style>
+
+      <div className="dash-root">
+
+        {/* Page header */}
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Dashboard</h1>
+            <p className="page-subtitle">Here&apos;s what&apos;s happening today.</p>
           </div>
-          <ResponsiveContainer width="100%" height={320}>
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f97316" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="name" stroke="#94a3b8" />
-              <YAxis stroke="#94a3b8" />
-              <Tooltip />
-              <Area type="monotone" dataKey="users" stroke="#f97316" fill="url(#colorUsers)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </Card>
+          <div className="header-controls">
+            <select
+              className="time-select"
+              value={timeRange}
+              onChange={e => setTimeRange(e.target.value)}
+            >
+              <option value="day">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+              <option value="year">This Year</option>
+            </select>
+            <button className="refresh-btn" onClick={fetchDashboardData}>
+              <RefreshCw size={13} />
+              Refresh
+            </button>
+          </div>
+        </div>
 
-        <Card className="p-6">
-          <h2 className="mb-4 text-lg font-semibold">User Distribution</h2>
-          <ResponsiveContainer width="100%" height={320}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={100}
-                paddingAngle={5}
-                dataKey="value"
-                label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
-              >
-                {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+        {/* Stat cards */}
+        <div className="stat-grid">
+          {statCards.map((s, i) => {
+            const Icon = s.icon;
+            const TrendIcon = s.trend === 'up' ? ArrowUpRight : ArrowDownRight;
+            return (
+              <div className="stat-card" key={i}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div className="stat-icon-wrap"><Icon size={15} /></div>
+                  <span className={`stat-badge ${s.trend}`}>
+                    <TrendIcon size={10} />{s.change}
+                  </span>
+                </div>
+                <p className="stat-value">{s.value}</p>
+                <p className="stat-title">{s.title}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Charts */}
+        <div className="chart-grid">
+          {/* Area chart */}
+          <div className="dash-card">
+            <div className="card-header" style={{ marginBottom: 16 }}>
+              <span className="card-title">Platform Activity</span>
+              <a href="#" className="card-link">View Details →</a>
+            </div>
+            <div style={{ padding: '0 20px 20px' }}>
+              <ResponsiveContainer width="100%" height={240}>
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor="#f97316" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#f97316" stopOpacity={0}    />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
+                  <XAxis dataKey="name" stroke="#ccc" tick={{ fontSize: 11, fontFamily: 'DM Sans' }} />
+                  <YAxis stroke="#ccc" tick={{ fontSize: 11, fontFamily: 'DM Sans' }} />
+                  <Tooltip contentStyle={{ fontFamily: 'DM Sans', fontSize: 12, borderRadius: 8, border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 4px 16px rgba(0,0,0,0.07)' }} />
+                  <Area type="monotone" dataKey="users" stroke="#f97316" strokeWidth={2} fill="url(#areaGrad)" dot={false} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Pie chart */}
+          <div className="dash-card">
+            <div className="card-header" style={{ marginBottom: 16 }}>
+              <span className="card-title">User Distribution</span>
+            </div>
+            <div style={{ padding: '0 20px 20px' }}>
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={4} dataKey="value">
+                    {pieData.map((entry, index) => (
+                      <Cell key={index} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ fontFamily: 'DM Sans', fontSize: 12, borderRadius: 8, border: '1px solid rgba(0,0,0,0.08)' }} />
+                </PieChart>
+              </ResponsiveContainer>
+              {/* Legend */}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 18, marginTop: 12 }}>
+                {pieData.map((d, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span className="legend-dot" style={{ background: d.color }} />
+                    <span style={{ fontSize: 11, color: '#888' }}>{d.name}</span>
+                  </div>
                 ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </Card>
-      </div>
-
-      {/* Recent Activities & Quick Actions */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2 p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Recent Activities</h2>
-            <button className="text-sm text-orange-600 hover:text-orange-700">View All</button>
+              </div>
+            </div>
           </div>
-          <div className="space-y-4">
-            {recentActivities.map((activity) => (
-              <div key={activity.id} className="flex items-center justify-between border-b pb-3 last:border-0">
-                <div className="flex items-center gap-3">
-                  <div className={`h-2 w-2 rounded-full ${
-                    activity.status === 'success' ? 'bg-green-500' :
-                    activity.status === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
-                  }`} />
-                  <div>
-                    <p className="font-medium">{activity.user}</p>
-                    <p className="text-sm text-gray-500">{activity.action}</p>
+        </div>
+
+        {/* Bottom row */}
+        <div className="bottom-grid">
+          {/* Recent activities */}
+          <div className="dash-card" style={{ padding: '16px 20px' }}>
+            <div className="card-header" style={{ padding: 0, marginBottom: 14 }}>
+              <span className="card-title">Recent Activities</span>
+              <a href="/admin/activities" className="card-link">View All →</a>
+            </div>
+            <div>
+              {recentActivities.map(a => (
+                <div key={a.id} className="activity-item">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span
+                      className="activity-dot"
+                      style={{ background: a.status === 'success' ? '#16a34a' : a.status === 'warning' ? '#f97316' : '#93c5fd' }}
+                    />
+                    <div>
+                      <p className="activity-user">{a.user}</p>
+                      <p className="activity-action">{a.action}</p>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    {a.amount != null && <p className="activity-amount">+${a.amount.toLocaleString()}</p>}
+                    <p className="activity-time">{a.time}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  {activity.amount && (
-                    <p className="font-semibold text-green-600">+${activity.amount}</p>
-                  )}
-                  <p className="text-xs text-gray-400">{activity.time}</p>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </Card>
 
-        <Card className="p-6">
-          <h2 className="mb-4 text-lg font-semibold">Quick Actions</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <Button className="h-20 flex-col gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-              <Users className="h-6 w-6" />
-              <span className="text-sm">Add User</span>
-            </Button>
-            <Button variant="outline" className="h-20 flex-col gap-2">
-              <Briefcase className="h-6 w-6" />
-              <span className="text-sm">New Investment</span>
-            </Button>
-            <Button variant="outline" className="h-20 flex-col gap-2">
-              <CheckSquare className="h-6 w-6" />
-              <span className="text-sm">Create Task</span>
-            </Button>
-            <Button variant="outline" className="h-20 flex-col gap-2">
-              <DollarSign className="h-6 w-6" />
-              <span className="text-sm">Process Payment</span>
-            </Button>
+          {/* Quick Actions */}
+          <div className="dash-card">
+            <div className="card-header" style={{ marginBottom: 0 }}>
+              <span className="card-title">Quick Actions</span>
+            </div>
+            <div className="qa-grid">
+              <button className="qa-btn primary">
+                <Users size={16} />
+                <span>Add User</span>
+              </button>
+              <button className="qa-btn">
+                <Briefcase size={16} />
+                <span>New Investment</span>
+              </button>
+              <button className="qa-btn">
+                <CheckSquare size={16} />
+                <span>Create Task</span>
+              </button>
+              <button className="qa-btn">
+                <DollarSign size={16} />
+                <span>Process Payment</span>
+              </button>
+            </div>
           </div>
-        </Card>
+        </div>
+
       </div>
-    </div>
+    </>
   );
 }

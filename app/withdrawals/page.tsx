@@ -1,3 +1,4 @@
+// src/app/(dashboard)/withdrawals/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,39 +7,28 @@ import { useAuthStore } from '@/libs/stores/auth.store';
 import { useInvestmentStore } from '@/libs/stores/investment.store';
 import { openWhatsApp, openTelegram } from '@/libs/utils/whatsapp';
 import { formatCurrency } from '@/libs/utils/format';
-import {
-  Wallet, Banknote, Bitcoin,
-  AlertCircle, CheckCircle, Clock,
-  X, ChevronRight, DollarSign, Info,
-} from 'lucide-react';
+import { Wallet, Banknote, Bitcoin, AlertCircle, CheckCircle, Clock, X, ChevronRight, DollarSign, Info } from 'lucide-react';
 import { investmentService } from '@/libs/services/investment.service';
+import { DASH_STYLES } from '@/app/styles/dashboardStyles';
 
 type Method = 'bank' | 'btc' | 'eth' | 'usdt';
 
-const METHODS: { id: Method; label: string; icon: React.ElementType; placeholder: string; userField: string; }[] = [
-  { id: 'bank',  label: 'Bank Transfer', icon: Banknote, placeholder: 'Bank name — account number', userField: 'bank_name'   },
-  { id: 'btc',   label: 'Bitcoin',       icon: Bitcoin,  placeholder: 'BTC wallet address',         userField: 'btc_wallet'  },
-  { id: 'eth',   label: 'Ethereum',      icon: Wallet,   placeholder: 'ETH wallet address',         userField: 'eth_wallet'  },
-  { id: 'usdt',  label: 'USDT',          icon: Wallet,   placeholder: 'USDT wallet address',        userField: 'usdt_wallet' },
+const METHODS: { id: Method; label: string; icon: React.ElementType; userField: string; }[] = [
+  { id: 'bank',  label: 'Bank Transfer', icon: Banknote, userField: 'bank_name'   },
+  { id: 'btc',   label: 'Bitcoin',       icon: Bitcoin,  userField: 'btc_wallet'  },
+  { id: 'eth',   label: 'Ethereum',      icon: Wallet,   userField: 'eth_wallet'  },
+  { id: 'usdt',  label: 'USDT',          icon: Wallet,   userField: 'usdt_wallet' },
 ];
 
-const FEE_RATE = 0.05;
 const MIN_WITHDRAWAL = 500;
+const FEE_RATE       = 0.05;
 
-const inputClass = 'w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400 transition-colors';
-
-const WhatsAppIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white shrink-0">
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-    <path d="M11.975 0C5.369 0 0 5.369 0 11.975c0 2.096.548 4.06 1.504 5.765L.057 23.429l5.82-1.525A11.93 11.93 0 0 0 11.975 24C18.581 24 24 18.631 24 11.975 24 5.369 18.581 0 11.975 0zm0 21.904a9.902 9.902 0 0 1-5.032-1.369l-.361-.214-3.741.981.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.28c0-5.456 4.437-9.893 9.881-9.893 5.445 0 9.881 4.437 9.881 9.881 0 5.456-4.436 9.916-9.881 9.916z"/>
-  </svg>
-);
-
-const TelegramIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white shrink-0">
-    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248-1.97 9.289c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L8.32 14.617l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.496.969z"/>
-  </svg>
-);
+function WaIcon() {
+  return <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.33 4.94L2.05 22l5.32-1.4c1.46.8 3.11 1.22 4.81 1.22 5.46 0 9.91-4.45 9.91-9.91 0-5.46-4.45-9.91-9.91-9.91z"/></svg>;
+}
+function TgIcon() {
+  return <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.2c-.06-.06-.15-.04-.22-.02-.09.02-1.55.99-4.37 2.89-.41.28-.79.42-1.12.41-.37-.01-1.08-.21-1.61-.38-.65-.21-1.16-.32-1.12-.68.02-.19.28-.38.78-.58 3.04-1.32 5.07-2.19 6.09-2.62 2.9-1.21 3.5-1.42 3.89-1.42.09 0 .28.02.4.12.1.08.13.19.14.27-.01.06-.01.13-.02.2z"/></svg>;
+}
 
 export default function WithdrawalsPage() {
   const { user, updateAccountInfo } = useAuthStore();
@@ -46,48 +36,35 @@ export default function WithdrawalsPage() {
 
   const [selectedMethod, setSelectedMethod] = useState<Method>('bank');
   const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showModal, setShowModal]           = useState(false);
+  const [saving, setSaving]                 = useState(false);
+  const [submitting, setSubmitting]         = useState(false);
+  const [errors, setErrors]                 = useState<Record<string, string>>({});
   const [showSupportModal, setShowSupportModal] = useState(false);
-const [supportMessage, setSupportMessage] = useState("");
-
-  const [paymentInfo, setPaymentInfo] = useState({
-    bank_name:      user?.bank_name      || '',
-    account_number: user?.account_number || '',
-    account_name:   user?.account_name   || '',
-    btc_wallet:     user?.btc_wallet     || '',
-    eth_wallet:     user?.eth_wallet     || '',
-    usdt_wallet:    user?.usdt_wallet    || '',
+  const [supportMessage, setSupportMessage]     = useState('');
+  const [paymentInfo, setPaymentInfo]       = useState({
+    bank_name: user?.bank_name || '', account_number: user?.account_number || '',
+    account_name: user?.account_name || '', btc_wallet: user?.btc_wallet || '',
+    eth_wallet: user?.eth_wallet || '', usdt_wallet: user?.usdt_wallet || '',
   });
 
   useEffect(() => { fetchTransactions(); }, []);
-
   useEffect(() => {
-  if (user) {
-    setPaymentInfo({
-      bank_name: user.bank_name || '',
-      account_number: user.account_number || '',
-      account_name: user.account_name || '',
-      btc_wallet: user.btc_wallet || '',
-      eth_wallet: user.eth_wallet || '',
-      usdt_wallet: user.usdt_wallet || '',
-    });
-  }
-}, [user]);
+    if (user) {
+      setPaymentInfo({ bank_name: user.bank_name || '', account_number: user.account_number || '', account_name: user.account_name || '', btc_wallet: user.btc_wallet || '', eth_wallet: user.eth_wallet || '', usdt_wallet: user.usdt_wallet || '' });
+    }
+  }, [user]);
 
   const investmentsArr  = Array.isArray(investments)  ? investments  : [];
   const transactionsArr = Array.isArray(transactions) ? transactions : [];
-
-  const totalBalance = investmentsArr.filter((i) => i.status === 'completed').reduce((sum, i) => sum + (i.amount || 0) + (i.total_profit || 0), 0);
-  const pendingWithdrawals = transactionsArr.filter((t) => t.transaction_type === 'withdrawal' && t.status === 'pending').reduce((sum, t) => sum + (t.amount || 0), 0);
-  const completedWithdrawals = transactionsArr.filter((t) => t.transaction_type === 'withdrawal' && t.status === 'completed').reduce((sum, t) => sum + (t.amount || 0), 0);
-  const availableBalance = Math.max(0, totalBalance - pendingWithdrawals);
-  const withdrawalHistory = transactionsArr.filter((t) => t.transaction_type === 'withdrawal').slice(0, 10);
-  const parsedAmount = parseFloat(withdrawAmount) || 0;
-  const fee = parsedAmount * FEE_RATE;
-  const netAmount = parsedAmount - fee;
+  const totalBalance    = investmentsArr.filter(i => i.status === 'completed').reduce((s, i) => s + (i.amount || 0) + (i.total_profit || 0), 0);
+  const pendingW        = transactionsArr.filter(t => t.transaction_type === 'withdrawal' && t.status === 'pending').reduce((s, t) => s + (t.amount || 0), 0);
+  const completedW      = transactionsArr.filter(t => t.transaction_type === 'withdrawal' && t.status === 'completed').reduce((s, t) => s + (t.amount || 0), 0);
+  const availableBalance = Math.max(0, totalBalance - pendingW);
+  const history          = transactionsArr.filter(t => t.transaction_type === 'withdrawal').slice(0, 10);
+  const parsedAmount     = parseFloat(withdrawAmount) || 0;
+  const fee              = parsedAmount * FEE_RATE;
+  const netAmount        = parsedAmount - fee;
 
   const getWalletDetails = (): string | null => {
     if (selectedMethod === 'bank') return user?.bank_name && user?.account_number ? `${user.bank_name} | ${user.account_number} | ${user.account_name}` : null;
@@ -96,234 +73,184 @@ const [supportMessage, setSupportMessage] = useState("");
     if (selectedMethod === 'usdt') return user?.usdt_wallet || null;
     return null;
   };
-
   const walletDetails = getWalletDetails();
 
   const validate = () => {
-    const errs: Record<string, string> = {};
-    if (!withdrawAmount || parsedAmount <= 0) errs.amount = 'Please enter an amount';
-    else if (parsedAmount < MIN_WITHDRAWAL) errs.amount = `Minimum withdrawal is ${formatCurrency(MIN_WITHDRAWAL)}`;
-    else if (parsedAmount > availableBalance) errs.amount = 'Insufficient balance';
-    if (!walletDetails) errs.method = 'Please add your payment details first';
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
+    const e: Record<string, string> = {};
+    if (!withdrawAmount || parsedAmount <= 0) e.amount = 'Please enter an amount';
+    else if (parsedAmount < MIN_WITHDRAWAL) e.amount = `Minimum is ${formatCurrency(MIN_WITHDRAWAL)}`;
+    else if (parsedAmount > availableBalance) e.amount = 'Insufficient balance';
+    if (!walletDetails) e.method = 'Please add your payment details first';
+    setErrors(e); return Object.keys(e).length === 0;
   };
 
   const handleWithdraw = async () => {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      const res = await investmentService.requestWithdrawal({
-        amount: parsedAmount,
-        method: selectedMethod,
-        wallet_details: walletDetails!,
-      });
-      const methodLabel = METHODS.find((m) => m.id === selectedMethod)?.label;
-      const message =
-        `Hello, I have submitted a withdrawal request.\n\n` +
-        `📋 Reference: ${res.reference}\n` +
-        `💰 Amount: ${formatCurrency(parsedAmount)}\n` +
-        `💸 Fee (5%): ${formatCurrency(fee)}\n` +
-        `✅ Net Amount: ${formatCurrency(netAmount)}\n` +
-        `💳 Method: ${methodLabel}\n` +
-        `📋 Details: ${walletDetails}\n` +
-        `👤 Email: ${user?.email}\n\n` +
-        `Please process my withdrawal. Thank you.`;
-      setSupportMessage(message);
-setShowSupportModal(true);
+      const res = await investmentService.requestWithdrawal({ amount: parsedAmount, method: selectedMethod, wallet_details: walletDetails! });
+      const methodLabel = METHODS.find(m => m.id === selectedMethod)?.label;
+      setSupportMessage(`Hello, I have submitted a withdrawal request.\n\n📋 Reference: ${res.reference}\n💰 Amount: ${formatCurrency(parsedAmount)}\n💸 Fee (5%): ${formatCurrency(fee)}\n✅ Net: ${formatCurrency(netAmount)}\n💳 Method: ${methodLabel}\n📋 Details: ${walletDetails}\n👤 Email: ${user?.email}\n\nPlease process my withdrawal. Thank you.`);
+      setShowSupportModal(true);
       setWithdrawAmount('');
       await fetchTransactions();
-    } catch {
-      alert('Failed to submit withdrawal. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
+    } catch { alert('Failed to submit. Please try again.'); }
+    finally { setSubmitting(false); }
   };
 
   const handleSaveInfo = async () => {
     setSaving(true);
-    try {
-      await updateAccountInfo(paymentInfo);
-      setShowModal(false);
-    } catch {
-      alert('Failed to save. Please try again.');
-    } finally {
-      setSaving(false);
-    }
+    try { await updateAccountInfo(paymentInfo); setShowModal(false); }
+    catch { alert('Failed to save.'); }
+    finally { setSaving(false); }
   };
+
+  function txStatusIcon(status: string) {
+    if (status === 'completed')  return <CheckCircle size={14} color="#16a34a" />;
+    if (status === 'processing') return <Clock size={14} color="#0284c7" />;
+    if (status === 'pending')    return <Clock size={14} color="#d97706" />;
+    return <AlertCircle size={14} color="#dc2626" />;
+  }
+  function txStatusColor(status: string) {
+    if (status === 'completed')  return '#16a34a';
+    if (status === 'processing') return '#0284c7';
+    if (status === 'pending')    return '#d97706';
+    return '#dc2626';
+  }
 
   return (
     <MainLayout>
-      <div className="space-y-6 pb-10">
+      <div className="ds ds-page ds-fade-up">
+        <style>{DASH_STYLES}</style>
 
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Withdrawals</h1>
-          <p className="text-sm text-gray-500 mt-1">Withdraw earnings to your bank or crypto wallet</p>
+          <h1 className="ds-page-title">Withdrawals</h1>
+          <p className="ds-page-subtitle">Transfer earnings to your bank or crypto wallet</p>
         </div>
 
-        {/* Balance Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-gradient-to-br from-gray-900 to-orange-900 rounded-2xl p-5 text-white">
-            <div className="flex items-center gap-2 mb-3">
-              <DollarSign className="w-4 h-4 text-orange-300" />
-              <p className="text-sm text-orange-200">Available Balance</p>
-            </div>
-            <p className="text-2xl font-bold">{formatCurrency(availableBalance)}</p>
-            <p className="text-xs text-orange-300 mt-1">Ready to withdraw</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <Clock className="w-4 h-4 text-yellow-500" />
-              <p className="text-sm text-gray-500">Pending</p>
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{formatCurrency(pendingWithdrawals)}</p>
-            <p className="text-xs text-gray-400 mt-1">Awaiting processing</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <CheckCircle className="w-4 h-4 text-green-500" />
-              <p className="text-sm text-gray-500">Total Withdrawn</p>
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{formatCurrency(completedWithdrawals)}</p>
-            <p className="text-xs text-gray-400 mt-1">Lifetime withdrawals</p>
-          </div>
+        {/* Balance stats */}
+        <div className="ds-stat-grid" style={{ gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))' }}>
+          {[
+            { label:'Available Balance',  value: formatCurrency(availableBalance), sub:'Ready to withdraw',      icon: DollarSign  },
+            { label:'Pending',            value: formatCurrency(pendingW),          sub:'Awaiting processing',   icon: Clock       },
+            { label:'Total Withdrawn',    value: formatCurrency(completedW),        sub:'Lifetime withdrawals',  icon: CheckCircle },
+          ].map(s => {
+            const Icon = s.icon;
+            return (
+              <div className="ds-stat-card" key={s.label}>
+                <div className="ds-stat-icon-pill"><Icon size={14} /></div>
+                <p className="ds-stat-value">{s.value}</p>
+                <p className="ds-stat-label">{s.label}</p>
+                <p className="ds-stat-sub">{s.sub}</p>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Withdrawal Form */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
-          <h2 className="font-semibold text-gray-900">Request Withdrawal</h2>
+        {/* Form */}
+        <div className="ds-card">
+          <div className="ds-card-header"><p className="ds-card-title">Request Withdrawal</p></div>
+          <div className="ds-card-body" style={{ display:'flex', flexDirection:'column', gap:16 }}>
+            <div className="ds-info-strip">
+              <Info size={13} style={{ flexShrink:0, marginTop:1 }} />
+              <span>A <strong>5% processing fee</strong> applies to all withdrawals. Minimum is <strong>{formatCurrency(MIN_WITHDRAWAL)}</strong>.</span>
+            </div>
 
-          <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl p-3">
-            <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-            <p className="text-xs text-blue-700">
-              A <strong>5% processing fee</strong> applies to all withdrawals.
-              Minimum withdrawal is <strong>{formatCurrency(MIN_WITHDRAWAL)}</strong>.
-            </p>
-          </div>
+            {/* Method */}
+            <div>
+              <label className="ds-input-label">Withdrawal Method</label>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(100px,1fr))', gap:8 }}>
+                {METHODS.map(m => {
+                  const Icon = m.icon;
+                  return (
+                    <button key={m.id} className={`ds-method-btn ${selectedMethod === m.id ? 'active' : ''}`} onClick={() => { setSelectedMethod(m.id); setErrors({}); }}>
+                      <Icon size={16} />{m.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-          {/* Method */}
-          <div>
-            <p className="text-sm font-medium text-gray-700 mb-2">Withdrawal Method</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {METHODS.map((m) => {
-                const Icon = m.icon;
-                return (
-                  <button
-                    key={m.id}
-                    onClick={() => { setSelectedMethod(m.id); setErrors({}); }}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 text-sm font-medium transition-all ${selectedMethod === m.id ? 'border-orange-400 bg-orange-50 text-orange-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
-                  >
-                    <Icon className="w-5 h-5" />{m.label}
+            {/* Payment details strip */}
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background: walletDetails ? '#f0fdf4' : '#fffbeb', border:`1px solid ${walletDetails ? 'rgba(22,163,74,0.2)' : 'rgba(217,119,6,0.2)'}`, borderRadius:10 }}>
+              <div style={{ flex:1, minWidth:0 }}>
+                <p style={{ fontSize:12.5, fontWeight:500, color:'#1a1a1a' }}>{selectedMethod === 'bank' ? 'Bank Details' : `${METHODS.find(m => m.id === selectedMethod)?.label} Wallet`}</p>
+                {walletDetails
+                  ? <p style={{ fontSize:11.5, color:'#555', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{walletDetails}</p>
+                  : <p style={{ fontSize:11.5, color:'#b45309', marginTop:2 }}>No details saved yet</p>}
+              </div>
+              <button onClick={() => setShowModal(true)} style={{ display:'flex', alignItems:'center', gap:4, background:'none', border:'none', cursor:'pointer', color:'#f97316', fontSize:12, fontWeight:500, flexShrink:0, marginLeft:12 }}>
+                {walletDetails ? 'Update' : 'Add'} <ChevronRight size={12} />
+              </button>
+            </div>
+            {errors.method && <p className="ds-input-error" style={{ marginTop:-10 }}>{errors.method}</p>}
+
+            {/* Amount */}
+            <div>
+              <label className="ds-input-label">Amount (USD)</label>
+              <div style={{ position:'relative' }}>
+                <span style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#aaa', fontSize:13 }}>$</span>
+                <input type="number" placeholder="0.00" value={withdrawAmount}
+                  onChange={e => { setWithdrawAmount(e.target.value); setErrors({}); }}
+                  className="ds-input" style={{ paddingLeft:26 }}
+                />
+              </div>
+              {errors.amount
+                ? <p className="ds-input-error">{errors.amount}</p>
+                : <p className="ds-input-hint">Available: {formatCurrency(availableBalance)}</p>}
+              <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginTop:8 }}>
+                {[500, 1000, 2000, 5000].map(amt => (
+                  <button key={amt} className="ds-btn-ghost ds-btn-sm" onClick={() => { setWithdrawAmount(String(amt)); setErrors({}); }}>
+                    {formatCurrency(amt)}
                   </button>
-                );
-              })}
+                ))}
+                <button className="ds-btn-ghost ds-btn-sm" onClick={() => { setWithdrawAmount(String(Math.floor(availableBalance))); setErrors({}); }}>Max</button>
+              </div>
             </div>
-          </div>
 
-          {/* Payment details */}
-          <div className={`flex items-center justify-between p-3.5 rounded-xl border ${walletDetails ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'}`}>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-gray-800">
-                {selectedMethod === 'bank' ? 'Bank Details' : `${METHODS.find(m => m.id === selectedMethod)?.label} Wallet`}
-              </p>
-              {walletDetails
-                ? <p className="text-xs text-gray-600 mt-0.5 truncate">{walletDetails}</p>
-                : <p className="text-xs text-yellow-700 mt-0.5">No details saved yet</p>
-              }
-            </div>
-            <button onClick={() => setShowModal(true)} className="shrink-0 ml-3 flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 font-medium">
-              {walletDetails ? 'Update' : 'Add'} <ChevronRight className="w-3 h-3" />
+            {/* Fee breakdown */}
+            {parsedAmount >= MIN_WITHDRAWAL && (
+              <div className="ds-fee-strip">
+                <div className="ds-fee-row"><span style={{ color:'#aaa' }}>Withdrawal amount</span><span style={{ fontWeight:500 }}>{formatCurrency(parsedAmount)}</span></div>
+                <div className="ds-fee-row"><span style={{ color:'#aaa' }}>Processing fee (5%)</span><span style={{ color:'#e05252' }}>−{formatCurrency(fee)}</span></div>
+                <div className="ds-fee-divider" />
+                <div className="ds-fee-row" style={{ fontWeight:600 }}><span style={{ color:'#1a1a1a' }}>You receive</span><span style={{ color:'#16a34a' }}>{formatCurrency(netAmount)}</span></div>
+              </div>
+            )}
+
+            <button className="ds-btn-primary" disabled={!withdrawAmount || submitting} onClick={handleWithdraw}
+              style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+              <WaIcon /><TgIcon />
+              {submitting ? 'Submitting…' : 'Request via WhatsApp & Telegram'}
             </button>
           </div>
-          {errors.method && <p className="text-xs text-red-500 -mt-3">{errors.method}</p>}
-
-          {/* Amount */}
-          <div>
-            <p className="text-sm font-medium text-gray-700 mb-1.5">Amount (USD)</p>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
-              <input
-                type="number"
-                placeholder="0.00"
-                value={withdrawAmount}
-                onChange={(e) => { setWithdrawAmount(e.target.value); setErrors({}); }}
-                min={MIN_WITHDRAWAL}
-                className="w-full pl-7 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400 transition-colors"
-              />
-            </div>
-            {errors.amount
-              ? <p className="text-xs text-red-500 mt-1">{errors.amount}</p>
-              : <p className="text-xs text-gray-400 mt-1">Available: {formatCurrency(availableBalance)}</p>
-            }
-            <div className="flex flex-wrap gap-2 mt-2">
-              {[500, 1000, 2000, 5000].map((amt) => (
-                <button key={amt} onClick={() => { setWithdrawAmount(String(amt)); setErrors({}); }} className="px-3 py-1 text-xs bg-gray-100 hover:bg-orange-100 hover:text-orange-700 rounded-lg transition-colors font-medium">
-                  {formatCurrency(amt)}
-                </button>
-              ))}
-              <button onClick={() => { setWithdrawAmount(String(Math.floor(availableBalance))); setErrors({}); }} className="px-3 py-1 text-xs bg-gray-100 hover:bg-orange-100 hover:text-orange-700 rounded-lg transition-colors font-medium">Max</button>
-            </div>
-          </div>
-
-          {/* Fee breakdown */}
-          {parsedAmount >= MIN_WITHDRAWAL && (
-            <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
-              <div className="flex justify-between text-gray-600"><span>Withdrawal amount</span><span>{formatCurrency(parsedAmount)}</span></div>
-              <div className="flex justify-between text-red-500"><span>Processing fee (5%)</span><span>-{formatCurrency(fee)}</span></div>
-              <div className="flex justify-between font-bold text-gray-900 border-t border-gray-200 pt-2"><span>You receive</span><span className="text-green-600">{formatCurrency(netAmount)}</span></div>
-            </div>
-          )}
-
-          <button
-            onClick={handleWithdraw}
-            disabled={!withdrawAmount || submitting}
-            className="w-full py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors"
-          >
-            <WhatsAppIcon />
-            <TelegramIcon />
-            {submitting ? 'Submitting...' : 'Request via WhatsApp & Telegram'}
-          </button>
         </div>
 
-        {/* Withdrawal History */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900">Withdrawal History</h2>
-          </div>
-          {withdrawalHistory.length > 0 ? (
-            <div className="divide-y divide-gray-50">
-              {withdrawalHistory.map((tx) => (
-                <div key={tx.id} className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-full ${tx.status === 'completed' ? 'bg-green-100' : tx.status === 'pending' ? 'bg-yellow-100' : tx.status === 'processing' ? 'bg-blue-100' : 'bg-red-100'}`}>
-                      {tx.status === 'completed' ? <CheckCircle className="w-4 h-4 text-green-600" />
-                        : tx.status === 'processing' ? <Clock className="w-4 h-4 text-blue-600" />
-                        : tx.status === 'pending'    ? <Clock className="w-4 h-4 text-yellow-600" />
-                        : <AlertCircle className="w-4 h-4 text-red-600" />}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Withdrawal</p>
-                      <p className="text-xs text-gray-400 font-mono">{tx.reference}</p>
-                      <p className="text-xs text-gray-400">{new Date(tx.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-red-600">-{formatCurrency(tx.amount)}</p>
-                    <p className="text-xs text-gray-400">Net: {formatCurrency(tx.amount * 0.95)}</p>
-                    <span className={`text-xs font-medium capitalize ${
-                      tx.status === 'completed'  ? 'text-green-600'
-                      : tx.status === 'processing' ? 'text-blue-600'
-                      : tx.status === 'pending'    ? 'text-yellow-600'
-                      : 'text-red-600'
-                    }`}>{tx.status}</span>
+        {/* History */}
+        <div className="ds-card">
+          <div className="ds-card-header"><p className="ds-card-title">Withdrawal History</p></div>
+          {history.length > 0 ? (
+            history.map(tx => (
+              <div key={tx.id} className="ds-list-item">
+                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  <div className="ds-list-icon">{txStatusIcon(tx.status)}</div>
+                  <div>
+                    <p style={{ fontSize:12.5, fontWeight:500, color:'#1a1a1a' }}>Withdrawal</p>
+                    <p style={{ fontSize:11, fontFamily:'monospace', color:'#bbb', marginTop:2 }}>{tx.reference}</p>
+                    <p style={{ fontSize:11, color:'#ccc' }}>{new Date(tx.created_at).toLocaleDateString('en-US', { day:'numeric', month:'short', year:'numeric' })}</p>
                   </div>
                 </div>
-              ))}
-            </div>
+                <div style={{ textAlign:'right' }}>
+                  <p style={{ fontSize:13, fontWeight:600, color:'#e05252' }}>−{formatCurrency(tx.amount)}</p>
+                  <p style={{ fontSize:11, color:'#bbb' }}>Net: {formatCurrency(tx.amount * 0.95)}</p>
+                  <p style={{ fontSize:11, fontWeight:500, color: txStatusColor(tx.status), textTransform:'capitalize' }}>{tx.status}</p>
+                </div>
+              </div>
+            ))
           ) : (
-            <div className="py-14 text-center">
-              <Wallet className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-              <p className="text-gray-400 text-sm">No withdrawal history yet</p>
+            <div className="ds-empty">
+              <div className="ds-empty-icon"><Wallet size={18} /></div>
+              <p className="ds-empty-title">No withdrawals yet</p>
             </div>
           )}
         </div>
@@ -331,121 +258,67 @@ setShowSupportModal(true);
 
       {/* Payment Details Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl flex flex-col max-h-[85vh]">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100 shrink-0">
-              <h2 className="font-bold text-gray-900">Payment Details</h2>
-              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-gray-100 rounded-full"><X className="w-5 h-5 text-gray-500" /></button>
-            </div>
-            <div className="overflow-y-auto flex-1 p-5 space-y-5">
+        <div className="ds-modal-overlay">
+          <div className="ds-modal">
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18 }}>
               <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Banknote className="w-4 h-4 text-gray-500" />
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Bank Transfer</p>
-                </div>
-                <div className="space-y-3">
-                  <div><label className="text-sm font-medium text-gray-700 mb-1 block">Bank Name</label><input type="text" value={paymentInfo.bank_name} onChange={(e) => setPaymentInfo({ ...paymentInfo, bank_name: e.target.value })} placeholder="e.g. Chase Bank" className={inputClass} /></div>
-                  <div><label className="text-sm font-medium text-gray-700 mb-1 block">Account Number</label><input type="text" value={paymentInfo.account_number} onChange={(e) => setPaymentInfo({ ...paymentInfo, account_number: e.target.value })} placeholder="0123456789" className={inputClass} /></div>
-                  <div><label className="text-sm font-medium text-gray-700 mb-1 block">Account Name</label><input type="text" value={paymentInfo.account_name} onChange={(e) => setPaymentInfo({ ...paymentInfo, account_name: e.target.value })} placeholder="John Doe" className={inputClass} /></div>
-                </div>
+                <p className="ds-modal-title">Payment Details</p>
+                <p className="ds-modal-sub">Add your bank and crypto wallet info</p>
               </div>
-              <div className="border-t border-gray-100" />
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Bitcoin className="w-4 h-4 text-gray-500" />
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Crypto Wallets</p>
-                </div>
-                <div className="space-y-3">
-                  <div><label className="text-sm font-medium text-gray-700 mb-1 block">Bitcoin (BTC)</label><input type="text" value={paymentInfo.btc_wallet} onChange={(e) => setPaymentInfo({ ...paymentInfo, btc_wallet: e.target.value })} placeholder="BTC wallet address" className={inputClass} /></div>
-                  <div>
-                    <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1">
-                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current text-blue-500"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm.193 18.613l-3.3-3.3 1.415-1.415 1.885 1.886 4.593-4.593 1.415 1.414-6.008 6.008z"/></svg>
-                      Ethereum (ETH)
-                    </label>
-                    <input type="text" value={paymentInfo.eth_wallet} onChange={(e) => setPaymentInfo({ ...paymentInfo, eth_wallet: e.target.value })} placeholder="0x... ETH wallet address" className={inputClass} />
-                  </div>
-                  <div>
-                    <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1">
-                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current text-green-500"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm4.5 13.5h-9v-3h9v3z"/></svg>
-                      USDT (TRC20 / ERC20)
-                    </label>
-                    <input type="text" value={paymentInfo.usdt_wallet} onChange={(e) => setPaymentInfo({ ...paymentInfo, usdt_wallet: e.target.value })} placeholder="USDT wallet address" className={inputClass} />
-                  </div>
-                </div>
-              </div>
+              <button className="ds-icon-btn" onClick={() => setShowModal(false)}><X size={15} /></button>
             </div>
-            <div className="p-5 border-t border-gray-100 shrink-0 flex gap-3">
-              <button onClick={() => setShowModal(false)} className="flex-1 py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium rounded-xl transition-colors text-sm">Cancel</button>
-              <button onClick={handleSaveInfo} disabled={saving} className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors text-sm">{saving ? 'Saving...' : 'Save Details'}</button>
+
+            <div style={{ display:'flex', flexDirection:'column', gap:14, maxHeight:'60vh', overflowY:'auto' }}>
+              <p style={{ fontSize:11, fontWeight:600, color:'#aaa', textTransform:'uppercase', letterSpacing:'0.05em' }}>Bank Transfer</p>
+              {[['Bank Name','bank_name','e.g. Chase Bank'],['Account Number','account_number','0123456789'],['Account Name','account_name','John Doe']].map(([l,k,ph]) => (
+                <div key={k}>
+                  <label className="ds-input-label">{l}</label>
+                  <input className="ds-input" type="text" placeholder={ph} value={paymentInfo[k as keyof typeof paymentInfo]}
+                    onChange={e => setPaymentInfo(p => ({ ...p, [k]: e.target.value }))} />
+                </div>
+              ))}
+              <div className="ds-divider" />
+              <p style={{ fontSize:11, fontWeight:600, color:'#aaa', textTransform:'uppercase', letterSpacing:'0.05em' }}>Crypto Wallets</p>
+              {[['Bitcoin (BTC)','btc_wallet','BTC wallet address'],['Ethereum (ETH)','eth_wallet','0x… ETH address'],['USDT','usdt_wallet','USDT wallet address']].map(([l,k,ph]) => (
+                <div key={k}>
+                  <label className="ds-input-label">{l}</label>
+                  <input className="ds-input" type="text" placeholder={ph} value={paymentInfo[k as keyof typeof paymentInfo]}
+                    onChange={e => setPaymentInfo(p => ({ ...p, [k]: e.target.value }))} />
+                </div>
+              ))}
+            </div>
+
+            <div className="ds-modal-actions">
+              <button className="ds-btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>
+              <button className="ds-btn-primary" disabled={saving} onClick={handleSaveInfo}>{saving ? 'Saving…' : 'Save Details'}</button>
             </div>
           </div>
         </div>
       )}
 
-
+      {/* Support Modal (post-withdrawal) */}
       {showSupportModal && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-    
-    <div className="bg-white rounded-2xl p-6 w-[90%] max-w-sm shadow-2xl animate-in fade-in zoom-in-95">
-      
-      {/* Header */}
-      <div className="text-center mb-5">
-        <h2 className="text-lg font-bold text-gray-900">
-          Contact Support
-        </h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Choose your preferred platform
-        </p>
-      </div>
-
-      {/* Buttons */}
-      <div className="flex flex-col gap-3">
-        
-        {/* WhatsApp */}
-        <button
-          onClick={() => {
-            openWhatsApp(supportMessage);
-            setShowSupportModal(false);
-          }}
-          className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-medium transition-all shadow-sm hover:shadow-md"
-        >
-          <WhatsAppIcon />
-          Continue with WhatsApp
-        </button>
-
-        {/* Telegram */}
-        <button
-          onClick={() => {
-            openTelegram(supportMessage);
-            setShowSupportModal(false);
-          }}
-          className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition-all shadow-sm hover:shadow-md"
-        >
-          <TelegramIcon />
-          Continue with Telegram
-        </button>
-      </div>
-
-      {/* Divider */}
-      <div className="flex items-center gap-2 my-4">
-        <div className="flex-1 h-px bg-gray-200" />
-        <span className="text-xs text-gray-400">or</span>
-        <div className="flex-1 h-px bg-gray-200" />
-      </div>
-
-      {/* Cancel */}
-      <button
-        onClick={() => setShowSupportModal(false)}
-        className="w-full py-2 text-sm text-gray-500 hover:text-gray-700 transition"
-      >
-        Cancel
-      </button>
-    </div>
-  </div>
-)}
+        <div className="ds-modal-overlay">
+          <div className="ds-modal" style={{ maxWidth:360 }}>
+            <p className="ds-modal-title">Contact Support</p>
+            <p className="ds-modal-sub">Choose your preferred platform to complete the request</p>
+            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+              {[
+                { label:'Continue with WhatsApp', icon:<WaIcon />, action: () => { openWhatsApp(supportMessage); setShowSupportModal(false); } },
+                { label:'Continue with Telegram', icon:<TgIcon />, action: () => { openTelegram(supportMessage); setShowSupportModal(false); } },
+              ].map((c, i) => (
+                <button key={i} className="ds-contact-btn" onClick={c.action}>
+                  <span className="ds-contact-icon">{c.icon}</span>
+                  <span style={{ fontSize:12.5, fontWeight:500 }}>{c.label}</span>
+                  <span className="ds-contact-arrow">›</span>
+                </button>
+              ))}
+            </div>
+            <div className="ds-divider" style={{ margin:'14px 0' }} />
+            <button style={{ width:'100%', background:'none', border:'none', cursor:'pointer', fontSize:12.5, color:'#aaa', padding:'6px' }} onClick={() => setShowSupportModal(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
     </MainLayout>
   );
 }
-
-
-

@@ -4,44 +4,53 @@ import { Task, UserTask } from '@/libs/types';
 
 class TaskService {
   async getAvailableTasks(): Promise<Task[]> {
-    const res = await apiService.get('/tasks/available-tasks/');
-    return res.data?.results ?? res.data ?? [];
+    try {
+      const response = await apiService.get<Task[]>('/tasks/tasks/available/');
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.error('Error fetching available tasks:', error);
+      return [];
+    }
   }
 
   async getMyTasks(): Promise<UserTask[]> {
-    const res = await apiService.get('/tasks/my-tasks/');
-    return res.data?.results ?? res.data ?? [];
+    try {
+      const response = await apiService.get<UserTask[]>('/tasks/user-tasks/my_tasks/');
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.error('Error fetching my tasks:', error);
+      return [];
+    }
   }
 
-  async startTask(taskId: number, tier: 'bronze' | 'silver' | 'gold') {
-  return (await apiService.post(`/tasks/${taskId}/start_task/`, { tier })).data;
-}
+  async startTask(taskId: number, tier: 'bronze' | 'silver' | 'gold'): Promise<UserTask> {
+    const response = await apiService.post<UserTask>(`/tasks/tasks/${taskId}/start_task/`, { tier });
+    return response.data;
+  }
 
-async uploadPayment(userTaskId: number, file: File) {
-  const form = new FormData();
-  form.append('payment_proof', file);
+  async uploadPaymentProof(userTaskId: number, file: File): Promise<{ status: string; message: string }> {
+    const formData = new FormData();
+    formData.append('payment_proof', file);
+    
+    const response = await apiService.post(`/tasks/user-tasks/${userTaskId}/upload_payment/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
 
-  return (
-    await apiService.post(
-      `/tasks/upload-payment/${userTaskId}/`,
-      form,
-      { headers: { 'Content-Type': 'multipart/form-data' } }
-    )
-  ).data;
-}
-
-async completeTask(userTaskId: number, file: File) {
-  const form = new FormData();
-  form.append('completion_proof', file);
-
-  return (
-    await apiService.post(
-      `/tasks/complete-task/${userTaskId}/`,
-      form,
-      { headers: { 'Content-Type': 'multipart/form-data' } }
-    )
-  ).data;
-}
+  async uploadCompletionProof(userTaskId: number, file: File): Promise<{ status: string; message: string }> {
+    const formData = new FormData();
+    formData.append('completion_proof', file);
+    
+    const response = await apiService.post(`/tasks/user-tasks/${userTaskId}/upload_completion/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
 }
 
 export const taskService = new TaskService();

@@ -2,59 +2,54 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Card } from '@/layout/components/Card';
-import { Button } from '@/layout/components/Button';
-import { Input } from '@/layout/components/Input';
 import { Dialog } from '@/layout/components/Dialog';
 import { adminService } from '@/libs/services/admin.service';
 import { useToast } from '@/libs/src/contexts/ToastContext';
 import { formatDate, formatDateTime } from '@/libs/utils/format';
 import { User } from '@/libs/types';
+import { ADMIN_STYLES } from '../_style/adminPageStyles';
 import {
-  Search,
-  Eye,
-  Ban,
-  CheckCircle,
-  XCircle,
-  Phone,
-  Award,
-  Loader2,
-  AlertCircle,
-  Key,
-  RefreshCw,
-  Mail,
-  Calendar,
-  DollarSign,
-  CreditCard,
-  Bitcoin,
-  Shield,
-  MoreVertical,
-  Edit,
-  Trash2,
-  Copy
+  Search, Eye, Award, RefreshCw, Phone, Calendar,
+  CreditCard, Bitcoin, Shield, Key, Trash2, Copy
 } from 'lucide-react';
 
+/* ─── Helpers ── */
+function Spinner({ text = 'Loading…' }: { text?: string }) {
+  return (
+    <div className="adm-loader-page">
+      <div className="adm-loader-inner">
+        <svg className="adm-spinner" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        <p className="adm-loader-text">{text}</p>
+      </div>
+    </div>
+  );
+}
+
+function Badge({ status }: { status: string }) {
+  return (
+    <span className={`adm-badge ${status}`}>
+      <span className="adm-badge-dot" />
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </span>
+  );
+}
+
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [showUserModal, setShowUserModal] = useState(false);
+  const [users, setUsers]                   = useState<User[]>([]);
+  const [loading, setLoading]               = useState(true);
+  const [searchTerm, setSearchTerm]         = useState('');
+  const [roleFilter, setRoleFilter]         = useState('all');
+  const [statusFilter, setStatusFilter]     = useState('all');
+  const [selectedUser, setSelectedUser]     = useState<User | null>(null);
+  const [showUserModal, setShowUserModal]   = useState(false);
   const { showToast } = useToast();
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const data = await adminService.getAllUsers();
-      const usersArray = Array.isArray(data) ? data : [];
-      setUsers(usersArray);
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch users';
-      setError(errorMessage);
+      setUsers(Array.isArray(data) ? data : []);
+    } catch {
       showToast('Failed to fetch users', 'error');
       setUsers([]);
     } finally {
@@ -62,445 +57,268 @@ export default function AdminUsersPage() {
     }
   }, [showToast]);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   const handleToggleSubscription = async (userId: number) => {
     try {
       await adminService.toggleUserSubscription(userId);
-      showToast('Subscription status updated', 'success');
+      showToast('Subscription updated', 'success');
       fetchUsers();
-    } catch (error) {
-      showToast('Failed to update subscription', 'error');
-    }
+    } catch { showToast('Failed to update subscription', 'error'); }
   };
 
   const handleUpdateRole = async (userId: number, role: string) => {
     try {
       await adminService.updateUserRole(userId, role);
-      showToast('User role updated', 'success');
+      showToast('Role updated', 'success');
       fetchUsers();
-    } catch (error) {
-      showToast('Failed to update role', 'error');
-    }
+    } catch { showToast('Failed to update role', 'error'); }
   };
 
   const handleDeleteUser = async (userId: number) => {
-    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      try {
-        await adminService.deleteUser(userId);
-        showToast('User deleted successfully', 'success');
-        fetchUsers();
-      } catch (error) {
-        showToast('Failed to delete user', 'error');
-      }
-    }
+    if (!confirm('Delete this user? This cannot be undone.')) return;
+    try {
+      await adminService.deleteUser(userId);
+      showToast('User deleted', 'success');
+      fetchUsers();
+    } catch { showToast('Failed to delete user', 'error'); }
   };
 
-  const copyToClipboard = (text: string, label: string) => {
+  const copy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
-    showToast(`${label} copied to clipboard`, 'success');
+    showToast(`${label} copied`, 'success');
   };
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch = 
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.phone_number?.includes(searchTerm);
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-    const matchesStatus = statusFilter === 'all' || 
-      (statusFilter === 'active' && user.is_active) ||
-      (statusFilter === 'inactive' && !user.is_active);
-    return matchesSearch && matchesRole && matchesStatus;
+  const filtered = users.filter(u => {
+    const q = searchTerm.toLowerCase();
+    return (
+      (u.email?.toLowerCase().includes(q) || u.username?.toLowerCase().includes(q) || u.phone_number?.includes(q)) &&
+      (roleFilter === 'all' || u.role === roleFilter) &&
+      (statusFilter === 'all' || (statusFilter === 'active' ? u.is_active : !u.is_active))
+    );
   });
 
   const stats = {
-    total: users.length,
-    active: users.filter(u => u.is_active).length,
-    inactive: users.filter(u => !u.is_active).length,
-    admins: users.filter(u => u.role === 'admin' || u.role === 'super_admin').length,
-    subscribed: users.filter(u => u.is_subscribed).length
+    total:      users.length,
+    active:     users.filter(u =>  u.is_active).length,
+    inactive:   users.filter(u => !u.is_active).length,
+    admins:     users.filter(u => u.role === 'admin' || u.role === 'super_admin').length,
+    subscribed: users.filter(u => u.is_subscribed).length,
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-orange-500 mx-auto mb-4" />
-          <p className="text-gray-600">Loading users...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="adm adm-root">
+      <style>{ADMIN_STYLES}</style>
+
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
         <div>
-          <h1 className="text-3xl font-bold gradient-text">User Management</h1>
-          <p className="mt-1 text-gray-600">Manage all platform users and their permissions</p>
+          <h1 className="adm-title">User Management</h1>
+          <p className="adm-subtitle">Manage platform users and their permissions</p>
         </div>
-        <Button onClick={fetchUsers} variant="outline" className="gap-2">
-          <RefreshCw className="h-4 w-4" />
-          Refresh
-        </Button>
+        <button className="adm-btn-ghost" onClick={fetchUsers}>
+          <RefreshCw size={13} /> Refresh
+        </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        <Card className="p-4">
-          <p className="text-sm text-gray-600">Total Users</p>
-          <p className="text-2xl font-bold">{stats.total}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-sm text-gray-600">Active</p>
-          <p className="text-2xl font-bold text-green-600">{stats.active}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-sm text-gray-600">Inactive</p>
-          <p className="text-2xl font-bold text-red-600">{stats.inactive}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-sm text-gray-600">Admins</p>
-          <p className="text-2xl font-bold text-purple-600">{stats.admins}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-sm text-gray-600">Subscribed</p>
-          <p className="text-2xl font-bold text-orange-600">{stats.subscribed}</p>
-        </Card>
+      <div className="adm-stat-grid" style={{ gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))' }}>
+        {[
+          { label:'Total Users',  value: stats.total },
+          { label:'Active',       value: stats.active },
+          { label:'Inactive',     value: stats.inactive },
+          { label:'Admins',       value: stats.admins },
+          { label:'Subscribed',   value: stats.subscribed },
+        ].map(s => (
+          <div className="adm-stat-card" key={s.label}>
+            <p className="adm-stat-label">{s.label}</p>
+            <p className="adm-stat-value">{s.value}</p>
+          </div>
+        ))}
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col gap-4 sm:flex-row">
-        <div className="flex-1">
-          <Input
-            placeholder="Search by email, username, or phone..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            icon={<Search className="h-4 w-4" />}
-          />
+      <div className="adm-toolbar">
+        <div className="adm-search-wrap">
+          <Search size={13} color="#ccc" />
+          <input className="adm-search-input" placeholder="Search email, username, phone…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
-        <select
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
-          className="rounded-lg border border-gray-300 px-4 py-2 focus:border-orange-500 focus:outline-none"
-        >
+        <select className="adm-select" value={roleFilter} onChange={e => setRoleFilter(e.target.value)}>
           <option value="all">All Roles</option>
           <option value="user">Users</option>
           <option value="admin">Admins</option>
           <option value="super_admin">Super Admins</option>
         </select>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-gray-300 px-4 py-2 focus:border-orange-500 focus:outline-none"
-        >
+        <select className="adm-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
           <option value="all">All Status</option>
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
         </select>
       </div>
 
-      {/* Users Table */}
-      <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gradient-to-r from-orange-50 to-amber-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">User</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Contact</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Role</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Joined</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Actions</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Password</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-orange-600">
-                        <span className="text-sm font-medium text-white">
-                          {user.username?.charAt(0).toUpperCase()}
-                        </span>
+      {/* Table */}
+      {loading ? <Spinner text="Loading users…" /> : (
+        <div className="adm-table-card">
+          <div style={{ overflowX:'auto' }}>
+            <table className="adm-table">
+              <thead>
+                <tr>
+                  <th>User</th><th>Contact</th><th>Role</th>
+                  <th>Status</th><th>Password</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr className="adm-empty-row"><td colSpan={6}>No users found</td></tr>
+                ) : filtered.map(user => (
+                  <tr key={user.id}>
+                    <td>
+                      <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                        <div className="adm-avatar">{user.username?.charAt(0).toUpperCase()}</div>
+                        <div>
+                          <p style={{ fontWeight:500, fontSize:12.5, color:'#1a1a1a' }}>{user.username}</p>
+                          <p style={{ fontSize:11.5, color:'#aaa' }}>{user.email}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{user.username}</p>
-                        <p className="text-sm text-gray-500">{user.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="space-y-1">
+                    </td>
+                    <td>
                       {user.phone_number && (
-                        <p className="text-sm flex items-center gap-1">
-                          <Phone className="h-3 w-3 text-gray-400" />
-                          {user.phone_number}
+                        <p style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, color:'#555', marginBottom:3 }}>
+                          <Phone size={11} color="#ccc" />{user.phone_number}
                         </p>
                       )}
-                      <p className="text-sm text-gray-500 flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {formatDate(user.created_at)}
+                      <p style={{ display:'flex', alignItems:'center', gap:5, fontSize:11.5, color:'#bbb' }}>
+                        <Calendar size={11} />{formatDate(user.created_at)}
                       </p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <select
-                      value={user.role}
-                      onChange={(e) => handleUpdateRole(user.id, e.target.value)}
-                      className="rounded-lg border border-gray-300 px-2 py-1 text-sm focus:border-orange-500 focus:outline-none"
-                    >
-                      <option value="user">User</option>
-                      <option value="admin">Admin</option>
-                      <option value="super_admin">Super Admin</option>
-                    </select>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="space-y-2">
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${
-                        user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                      }`}>
-                        {user.is_active ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-                        {user.is_active ? 'Active' : 'Inactive'}
-                      </span>
-                      <button
-                        onClick={() => handleToggleSubscription(user.id)}
-                        className={`inline-flex w-full items-center justify-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors ${
-                          user.is_subscribed ? 'bg-orange-100 text-orange-700 hover:bg-orange-200' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        <Award className="h-3 w-3" />
-                        {user.is_subscribed ? 'Subscribed' : 'Subscribe'}
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm">{formatDate(user.created_at)}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setShowUserModal(true);
-                        }}
-                        className="rounded-lg p-1.5 hover:bg-gray-100 transition-colors"
-                        title="View Details"
-                      >
-                        <Eye className="h-4 w-4 text-gray-600" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteUser(user.id)}
-                        className="rounded-lg p-1.5 hover:bg-red-100 text-red-600 transition-colors"
-                        title="Delete User"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                  <div className="relative group">
-                    {user.plain_password ? (
-                      <div className="flex items-center gap-2">
-                        <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">
-                          {user.plain_password}
-                        </code>
+                    </td>
+                    <td>
+                      <select className="adm-role-select" value={user.role} onChange={e => handleUpdateRole(user.id, e.target.value)}>
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                        <option value="super_admin">Super Admin</option>
+                      </select>
+                    </td>
+                    <td>
+                      <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+                        <Badge status={user.is_active ? 'active' : 'inactive'} />
                         <button
-                          onClick={() => {
-                            if (user.plain_password) {
-                              navigator.clipboard.writeText(user.plain_password);
-                              showToast('Password copied to clipboard', 'success');
-                            }
-                          }}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleToggleSubscription(user.id)}
+                          className={`adm-badge ${user.is_subscribed ? 'active' : 'inactive'}`}
+                          style={{ cursor:'pointer', border:'none', background: user.is_subscribed ? '#f0fdf4' : '#fafafa' }}
                         >
-                          <Copy className="h-4 w-4 text-gray-400 hover:text-orange-500" />
+                          <Award size={10} />
+                          {user.is_subscribed ? 'Subscribed' : 'Subscribe'}
                         </button>
                       </div>
-                    ) : (
-                      <span className="text-xs text-gray-400">Not stored</span>
-                    )}
-                  </div>
-                </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </td>
+                    <td>
+                      {user.plain_password ? (
+                        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                          <code className="adm-mono">{user.plain_password}</code>
+                          <button className="adm-icon-btn" onClick={() => copy(user.plain_password!, 'Password')}>
+                            <Copy size={12} />
+                          </button>
+                        </div>
+                      ) : <span style={{ fontSize:11.5, color:'#ddd' }}>Not stored</span>}
+                    </td>
+                    <td>
+                      <div style={{ display:'flex', gap:4 }}>
+                        <button className="adm-icon-btn" title="View Details" onClick={() => { setSelectedUser(user); setShowUserModal(true); }}>
+                          <Eye size={14} />
+                        </button>
+                        <button className="adm-icon-btn danger" title="Delete" onClick={() => handleDeleteUser(user.id)}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </Card>
+      )}
 
-      {/* User Details Modal */}
+      {/* User Detail Modal */}
       <Dialog open={showUserModal} onClose={() => setShowUserModal(false)}>
         {selectedUser && (
-          <div className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold">User Details</h2>
-              <p className="text-gray-600">Complete user information</p>
-            </div>
+          <div className="adm" style={{ maxWidth:680, maxHeight:'85vh', overflowY:'auto' }}>
+            <style>{ADMIN_STYLES}</style>
+            <p className="adm-modal-title">User Details</p>
+            <p className="adm-modal-sub">Complete information for {selectedUser.username}</p>
 
-            <div className="space-y-6">
-              {/* Personal Info */}
-              <div className="rounded-lg border p-4">
-                <h3 className="mb-3 font-semibold flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-orange-500" />
-                  Personal Information
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm text-gray-500">Username</label>
-                    <p className="font-medium">{selectedUser.username}</p>
+            {/* Personal */}
+            <div className="adm-detail-section">
+              <p className="adm-detail-sec-title"><Shield size={12} /> Personal Information</p>
+              <div className="adm-detail-grid">
+                {[
+                  ['Username', selectedUser.username],
+                  ['Email',    selectedUser.email],
+                  ['Phone',    selectedUser.phone_number || 'N/A'],
+                  ['Role',     selectedUser.role],
+                  ['Status',   selectedUser.is_active ? 'Active' : 'Inactive'],
+                  ['Subscription', selectedUser.is_subscribed ? 'Premium' : 'Free'],
+                  ['Joined',   formatDate(selectedUser.created_at)],
+                  ['Last Login', selectedUser.last_login ? formatDateTime(selectedUser.last_login) : 'Never'],
+                ].map(([l,v]) => (
+                  <div key={l}>
+                    <p className="adm-detail-label">{l}</p>
+                    <p className="adm-detail-value">{v}</p>
                   </div>
-                  <div>
-                    <label className="text-sm text-gray-500">Email</label>
-                    <p className="flex items-center gap-2">
-                      {selectedUser.email}
-                      <button onClick={() => copyToClipboard(selectedUser.email, 'Email')}>
-                        <Copy className="h-3 w-3 text-gray-400" />
-                      </button>
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-500">Phone</label>
-                    <p>{selectedUser.phone_number || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-500">Role</label>
-                    <p className="capitalize">{selectedUser.role}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-500">Status</label>
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${
-                      selectedUser.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                    }`}>
-                      {selectedUser.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
-                  <div className="rounded-lg border p-4">
-                    <h3 className="mb-3 font-semibold flex items-center gap-2">
-                      <Key className="h-5 w-5 text-red-500" />
-                      Password (Testing Only)
-                    </h3>
-                    <div className="space-y-2">
-                      <div>
-                        <label className="text-sm text-gray-500">Plain Text Password</label>
-                        <div className="mt-1 flex items-center gap-2">
-                          <code className="flex-1 rounded bg-gray-100 px-3 py-2 font-mono text-sm">
-                            {selectedUser.plain_password || 'Not stored'}
-                          </code>
-                          {selectedUser.plain_password && (
-                            <button
-                              onClick={() => selectedUser.plain_password && copyToClipboard(selectedUser.plain_password, 'Password')}
-                              className="rounded-lg p-2 hover:bg-gray-100"
-                            >
-                              <Copy className="h-4 w-4 text-gray-500" />
-                            </button>
-                          )}
-                        </div>
-                        <p className="mt-1 text-xs text-red-500">
-                          ⚠️ This is for testing only. Remove in production!
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-500">Subscription</label>
-                    <p>{selectedUser.is_subscribed ? 'Premium Member' : 'Free Member'}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bank Info */}
-              {(selectedUser.bank_name || selectedUser.account_number) && (
-                <div className="rounded-lg border p-4">
-                  <h3 className="mb-3 font-semibold flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-green-500" />
-                    Bank Information
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm text-gray-500">Bank Name</label>
-                      <p>{selectedUser.bank_name || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-500">Account Number</label>
-                      <p>{selectedUser.account_number || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-500">Account Name</label>
-                      <p>{selectedUser.account_name || 'N/A'}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Crypto Wallets */}
-              {(selectedUser.btc_wallet || selectedUser.eth_wallet) && (
-                <div className="rounded-lg border p-4">
-                  <h3 className="mb-3 font-semibold flex items-center gap-2">
-                    <Bitcoin className="h-5 w-5 text-orange-500" />
-                    Crypto Wallets
-                  </h3>
-                  <div className="space-y-2">
-                    {selectedUser.btc_wallet && (
-                      <div>
-                        <label className="text-sm text-gray-500">Bitcoin</label>
-                        <p className="font-mono text-sm">{selectedUser.btc_wallet}</p>
-                      </div>
-                    )}
-                    {selectedUser.eth_wallet && (
-                      <div>
-                        <label className="text-sm text-gray-500">Ethereum</label>
-                        <p className="font-mono text-sm">{selectedUser.eth_wallet}</p>
-                      </div>
-                    )}
-                    {selectedUser.usdt_wallet && (
-                      <div>
-                        <label className="text-sm text-gray-500">USDT</label>
-                        <p className="font-mono text-sm">{selectedUser.usdt_wallet}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Account Timeline */}
-              <div className="rounded-lg border p-4">
-                <h3 className="mb-3 font-semibold flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-blue-500" />
-                  Account Timeline
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm text-gray-500">Created</label>
-                    <p>{formatDateTime(selectedUser.created_at)}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-500">Last Updated</label>
-                    <p>{selectedUser.updated_at ? formatDateTime(selectedUser.updated_at) : 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-500">Last Login</label>
-                    <p>{selectedUser.last_login ? formatDateTime(selectedUser.last_login) : 'Never'}</p>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
 
-            <div className="mt-6 flex gap-3">
-              <Button variant="outline" onClick={() => setShowUserModal(false)}>
-                Close
-              </Button>
-              <Button
-                onClick={() => {
-                  handleToggleSubscription(selectedUser.id);
-                  setShowUserModal(false);
-                }}
-                className="bg-orange-500 hover:bg-orange-600"
-              >
+            {/* Password */}
+            <div className="adm-detail-section">
+              <p className="adm-detail-sec-title"><Key size={12} /> Password (Testing Only)</p>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <code className="adm-mono" style={{ flex:1 }}>{selectedUser.plain_password || 'Not stored'}</code>
+                {selectedUser.plain_password && (
+                  <button className="adm-icon-btn" onClick={() => copy(selectedUser.plain_password!, 'Password')}>
+                    <Copy size={13} />
+                  </button>
+                )}
+              </div>
+              <p style={{ fontSize:11, color:'#e05252', marginTop:6 }}>⚠ For testing only — remove in production</p>
+            </div>
+
+            {/* Bank */}
+            {(selectedUser.bank_name || selectedUser.account_number) && (
+              <div className="adm-detail-section">
+                <p className="adm-detail-sec-title"><CreditCard size={12} /> Bank Information</p>
+                <div className="adm-detail-grid">
+                  {[
+                    ['Bank Name', selectedUser.bank_name],
+                    ['Account Number', selectedUser.account_number],
+                    ['Account Name', selectedUser.account_name],
+                  ].map(([l,v]) => v ? (
+                    <div key={l}><p className="adm-detail-label">{l}</p><p className="adm-detail-value">{v}</p></div>
+                  ) : null)}
+                </div>
+              </div>
+            )}
+
+            {/* Crypto */}
+            {(selectedUser.btc_wallet || selectedUser.eth_wallet || selectedUser.usdt_wallet) && (
+              <div className="adm-detail-section">
+                <p className="adm-detail-sec-title"><Bitcoin size={12} /> Crypto Wallets</p>
+                <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                  {[['Bitcoin', selectedUser.btc_wallet], ['Ethereum', selectedUser.eth_wallet], ['USDT', selectedUser.usdt_wallet]].map(([l,v]) => v ? (
+                    <div key={l}>
+                      <p className="adm-detail-label">{l}</p>
+                      <code className="adm-mono">{v}</code>
+                    </div>
+                  ) : null)}
+                </div>
+              </div>
+            )}
+
+            <div className="adm-modal-actions">
+              <button className="adm-btn-ghost" onClick={() => setShowUserModal(false)}>Close</button>
+              <button className="adm-btn-primary" onClick={() => { handleToggleSubscription(selectedUser.id); setShowUserModal(false); }}>
                 {selectedUser.is_subscribed ? 'Remove Subscription' : 'Add Subscription'}
-              </Button>
+              </button>
             </div>
           </div>
         )}
