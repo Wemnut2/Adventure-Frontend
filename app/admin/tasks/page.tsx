@@ -7,7 +7,7 @@ import { adminService } from '@/libs/services/admin.service';
 import { useToast } from '@/libs/src/contexts/ToastContext';
 import { formatCurrency, formatDate } from '@/libs/utils/format';
 import { ADMIN_STYLES } from '../_style/adminPageStyles';
-import { Search, Eye, CheckCircle, XCircle, Award, RefreshCw, Send, X } from 'lucide-react';
+import { Search, Eye, CheckCircle, XCircle, Award, RefreshCw, Send, X, Plus } from 'lucide-react';
 
 interface Investment {
   id: number;
@@ -22,6 +22,32 @@ interface Investment {
   start_date?: string;
   end_date?: string;
 }
+
+interface TaskFormData {
+  title: string;
+  description: string;
+  bronze_price: string;
+  silver_price: string;
+  gold_price: string;
+  bronze_reward: string;
+  silver_reward: string;
+  gold_reward: string;
+  requires_subscription: boolean;
+  is_active: boolean;
+}
+
+const EMPTY_TASK_FORM: TaskFormData = {
+  title: '',
+  description: '',
+  bronze_price: '',
+  silver_price: '',
+  gold_price: '',
+  bronze_reward: '',
+  silver_reward: '',
+  gold_reward: '',
+  requires_subscription: false,
+  is_active: true,
+};
 
 function Spinner() {
   return (
@@ -49,26 +75,30 @@ export default function AdminUserInvestmentsPage() {
   const [showDetails, setShowDetails] = useState(false);
   const [showReject, setShowReject] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  
+  // Task creation modal states
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [taskForm, setTaskForm] = useState<TaskFormData>(EMPTY_TASK_FORM);
+  const [creatingTask, setCreatingTask] = useState(false);
+  
   const { showToast } = useToast();
 
+  const fetch = useCallback(async (): Promise<void> => {
+    setLoading(true);
+    try {
+      const data = await adminService.getAllUserInvestments();
+      setInvestments(Array.isArray(data) ? data : []);
+    } catch {
+      showToast('Failed to fetch investments', 'error');
+      setInvestments([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [showToast]);
 
-// ... inside your component
-const fetch = useCallback(async (): Promise<void> => {
-  setLoading(true);
-  try {
-    const data = await adminService.getAllUserInvestments();
-    setInvestments(Array.isArray(data) ? data : []);
-  } catch {
-    showToast('Failed to fetch investments', 'error');
-    setInvestments([]);
-  } finally {
-    setLoading(false);
-  }
-}, [showToast]); // Add any dependencies that fetch uses
-
-useEffect(() => { 
-  fetch(); 
-}, [fetch]); // Now fetch is a stable dependency
+  useEffect(() => { 
+    fetch(); 
+  }, [fetch]);
 
   const handleVerify = async (id: number) => {
     try { await adminService.verifyUserInvestment(id); showToast('Verified! Countdown started.', 'success'); fetch(); }
@@ -85,6 +115,50 @@ useEffect(() => {
     try { await adminService.completeUserInvestment(id); showToast('Marked as completed', 'success'); fetch(); }
     catch { showToast('Failed', 'error'); }
   };
+
+  // Task creation handlers
+  const handleTaskFormChange = (field: keyof TaskFormData) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
+    setTaskForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Update the handleCreateTask function to convert string values to numbers
+const handleCreateTask = async () => {
+  if (!taskForm.title.trim()) {
+    showToast('Task title is required', 'error');
+    return;
+  }
+  if (!taskForm.description.trim()) {
+    showToast('Description is required', 'error');
+    return;
+  }
+
+  setCreatingTask(true);
+  try {
+    await adminService.createTask({
+      title: taskForm.title,
+      description: taskForm.description,
+      // Convert string to number using parseFloat
+      bronze_price: parseFloat(taskForm.bronze_price) || 0,
+      silver_price: parseFloat(taskForm.silver_price) || 0,
+      gold_price: parseFloat(taskForm.gold_price) || 0,
+      bronze_reward: parseFloat(taskForm.bronze_reward) || 0,
+      silver_reward: parseFloat(taskForm.silver_reward) || 0,
+      gold_reward: parseFloat(taskForm.gold_reward) || 0,
+      requires_subscription: taskForm.requires_subscription,
+      is_active: taskForm.is_active,
+    });
+    showToast('Task created successfully!', 'success');
+    setShowTaskModal(false);
+    setTaskForm(EMPTY_TASK_FORM);
+  } catch {
+    showToast('Failed to create task', 'error');
+  } finally {
+    setCreatingTask(false);
+  }
+};
 
   const filtered = investments.filter(i =>
     (i.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -109,7 +183,14 @@ useEffect(() => {
           <h1 className="adm-title">User Investments</h1>
           <p className="adm-subtitle">Verify and manage user investment requests</p>
         </div>
-        <button className="adm-btn-ghost" onClick={fetch}><RefreshCw size={13} /> Refresh</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="adm-btn-primary" onClick={() => setShowTaskModal(true)}>
+            <Plus size={13} /> Create Task
+          </button>
+          <button className="adm-btn-ghost" onClick={fetch}>
+            <RefreshCw size={13} /> Refresh
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -253,6 +334,176 @@ useEffect(() => {
             <button className="adm-btn-ghost" onClick={() => setShowReject(false)}>Cancel</button>
             <button className="adm-btn-danger" onClick={() => selectedInv && handleReject(selectedInv.id)}>
               <XCircle size={13} /> Confirm Rejection
+            </button>
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Create Task Modal */}
+      <Dialog open={showTaskModal} onClose={() => { setShowTaskModal(false); setTaskForm(EMPTY_TASK_FORM); }}>
+        <div className="adm" style={{ maxWidth: 560, maxHeight: '85vh', overflowY: 'auto' }}>
+          <style>{ADMIN_STYLES}</style>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 18 }}>
+            <div>
+              <p className="adm-modal-title">Create New Task</p>
+              <p className="adm-modal-sub">Set up a task with tier pricing</p>
+            </div>
+            <button className="adm-icon-btn" onClick={() => { setShowTaskModal(false); setTaskForm(EMPTY_TASK_FORM); }}>
+              <X size={14} />
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div className="adm-field-wrap">
+              <label className="adm-field-label">Task Title *</label>
+              <input 
+                className="adm-field-input" 
+                value={taskForm.title} 
+                onChange={handleTaskFormChange('title')} 
+                placeholder="Enter task title" 
+              />
+            </div>
+
+            <div className="adm-field-wrap">
+              <label className="adm-field-label">Description *</label>
+              <textarea 
+                className="adm-field-textarea" 
+                rows={3} 
+                value={taskForm.description} 
+                onChange={handleTaskFormChange('description')} 
+                placeholder="Describe the task..." 
+              />
+            </div>
+
+            <div className="adm-divider" />
+
+            {/* Bronze Tier */}
+            <div>
+              <p style={{ fontSize: 11.5, fontWeight: 600, color: '#555', marginBottom: 10 }}>
+                Bronze Package
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div className="adm-field-wrap">
+                  <label className="adm-field-label">Price (USD)</label>
+                  <input 
+                    className="adm-field-input" 
+                    type="number" 
+                    step="0.01" 
+                    value={taskForm.bronze_price} 
+                    onChange={handleTaskFormChange('bronze_price')} 
+                    placeholder="0.00" 
+                  />
+                </div>
+                <div className="adm-field-wrap">
+                  <label className="adm-field-label">Reward (USD)</label>
+                  <input 
+                    className="adm-field-input" 
+                    type="number" 
+                    step="0.01" 
+                    value={taskForm.bronze_reward} 
+                    onChange={handleTaskFormChange('bronze_reward')} 
+                    placeholder="0.00" 
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Silver Tier */}
+            <div>
+              <p style={{ fontSize: 11.5, fontWeight: 600, color: '#555', marginBottom: 10 }}>
+                Silver Package
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div className="adm-field-wrap">
+                  <label className="adm-field-label">Price (USD)</label>
+                  <input 
+                    className="adm-field-input" 
+                    type="number" 
+                    step="0.01" 
+                    value={taskForm.silver_price} 
+                    onChange={handleTaskFormChange('silver_price')} 
+                    placeholder="0.00" 
+                  />
+                </div>
+                <div className="adm-field-wrap">
+                  <label className="adm-field-label">Reward (USD)</label>
+                  <input 
+                    className="adm-field-input" 
+                    type="number" 
+                    step="0.01" 
+                    value={taskForm.silver_reward} 
+                    onChange={handleTaskFormChange('silver_reward')} 
+                    placeholder="0.00" 
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Gold Tier */}
+            <div>
+              <p style={{ fontSize: 11.5, fontWeight: 600, color: '#555', marginBottom: 10 }}>
+                Gold Package
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div className="adm-field-wrap">
+                  <label className="adm-field-label">Price (USD)</label>
+                  <input 
+                    className="adm-field-input" 
+                    type="number" 
+                    step="0.01" 
+                    value={taskForm.gold_price} 
+                    onChange={handleTaskFormChange('gold_price')} 
+                    placeholder="0.00" 
+                  />
+                </div>
+                <div className="adm-field-wrap">
+                  <label className="adm-field-label">Reward (USD)</label>
+                  <input 
+                    className="adm-field-input" 
+                    type="number" 
+                    step="0.01" 
+                    value={taskForm.gold_reward} 
+                    onChange={handleTaskFormChange('gold_reward')} 
+                    placeholder="0.00" 
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="adm-divider" />
+
+            <label className="adm-check-row">
+              <input 
+                type="checkbox" 
+                checked={taskForm.requires_subscription} 
+                onChange={handleTaskFormChange('requires_subscription')} 
+              />
+              Requires Premium Subscription
+            </label>
+
+            <label className="adm-check-row">
+              <input 
+                type="checkbox" 
+                checked={taskForm.is_active} 
+                onChange={handleTaskFormChange('is_active')} 
+              />
+              Active (visible to users)
+            </label>
+          </div>
+
+          <div className="adm-modal-actions">
+            <button 
+              className="adm-btn-ghost" 
+              onClick={() => { setShowTaskModal(false); setTaskForm(EMPTY_TASK_FORM); }}
+            >
+              Cancel
+            </button>
+            <button 
+              className="adm-btn-primary" 
+              onClick={handleCreateTask} 
+              disabled={creatingTask}
+            >
+              {creatingTask ? 'Creating...' : 'Create Task'}
             </button>
           </div>
         </div>

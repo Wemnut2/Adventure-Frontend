@@ -413,20 +413,19 @@ class AdminService {
   }
 
   async createTask(data: Partial<Task>): Promise<Task> {
-    const payload = {
+    // Use the standard REST endpoint, not /create_task/
+    const response = await apiService.post<Task>('/admin/tasks/', {
       title: data.title,
       description: data.description,
-      bronze_price: data.bronze_price || '0',
-      silver_price: data.silver_price || '0',
-      gold_price: data.gold_price || '0',
-      bronze_reward: data.bronze_reward || '0',
-      silver_reward: data.silver_reward || '0',
-      gold_reward: data.gold_reward || '0',
+      bronze_price: data.bronze_price,
+      silver_price: data.silver_price,
+      gold_price: data.gold_price,
+      bronze_reward: data.bronze_reward,
+      silver_reward: data.silver_reward,
+      gold_reward: data.gold_reward,
       requires_subscription: data.requires_subscription || false,
       is_active: data.is_active !== undefined ? data.is_active : true,
-    };
-    
-    const response = await apiService.post<Task>('/admin/tasks/create_task/', payload);
+    });
     return response.data;
   }
 
