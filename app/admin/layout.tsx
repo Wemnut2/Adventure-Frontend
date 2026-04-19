@@ -19,7 +19,7 @@ export default function AdminLayout({
 
   useEffect(() => {
     loadUser();
-  }, []);
+  }, [loadUser]);
 
   useEffect(() => {
     if (isAuthenticated && user?.role !== 'admin' && user?.role !== 'super_admin') {

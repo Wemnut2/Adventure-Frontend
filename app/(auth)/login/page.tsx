@@ -8,8 +8,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { AxiosError } from 'axios';
-import { Button } from '@/layout/components/Button';
-import { Input } from '@/layout/components/Input';
 import { useToast } from '@/libs/src/contexts/ToastContext';
 import { useLogin } from '@/libs/hooks/useAuth';
 import { useAuthStore } from '@/libs/stores/auth.store';
