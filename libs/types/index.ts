@@ -53,18 +53,18 @@ export interface AuthResponse {
   user: User;
 }
 
-// Investment Types
 export interface InvestmentPlan {
   id: number;
   name: string;
   description: string;
   min_amount: number;
   max_amount: number | null;
-  daily_interest_rate: number;
+  expected_return: number;
   duration_days: number;
   is_active: boolean;
   created_at: string;
 }
+
 
 export interface Investment {
   id: number;
@@ -101,24 +101,85 @@ export interface Transaction {
   updated_at: string;
 }
 
-// Task Types
-// src/libs/types/index.ts - Update Task interface
-
 export interface Task {
   id: number;
   title: string;
   description: string;
-  video: string | null;
-  bronze_price: string;  // Changed from amount_to_pay
-  silver_price: string;
-  gold_price: string;
-  bronze_reward: string;  // Changed from reward_amount
-  silver_reward: string;
-  gold_reward: string;
+  video_url: string | null;
+  bronze_price: number;
+  silver_price: number;
+  gold_price: number;
+  bronze_reward: number;
+  silver_reward: number;
+  gold_reward: number;
   is_active: boolean;
   requires_subscription: boolean;
   created_at: string;
+}
+
+export interface TaskInvestment {
+  id: number;
+  user: number;
+  user_email: string;
+  task: number;
+  task_title: string;
+  task_description: string;
+  tier: 'bronze' | 'silver' | 'gold';
+  amount: number;
+  reward_amount: number;
+  status: 'pending' | 'active' | 'completed' | 'cancelled';
+  admin_notes?: string;
+  start_date?: string;
+  end_date?: string;
+  completed_date?: string;
+  created_at: string;
+  days_remaining: number;
+  progress_percentage: number;
+  profit: number;
+}
+
+
+export interface UserInvestment {
+  id: number;
+  user: number;
+  user_email: string;
+  user_username: string;
+  plan: number;
+  plan_name: string;
+  plan_description: string;
+  amount: number;
+  status: 'pending_payment' | 'payment_review' | 'active' | 'completed' | 'cancelled';
+  payment_proof?: string;
+  payment_reference?: string;
+  admin_notes?: string;
+  start_date?: string;
+  end_date?: string;
+  completed_date?: string;
+  created_at: string;
   updated_at: string;
+  expected_return_amount: number;
+  daily_profit: number;
+  total_profit: number;
+  days_remaining: number;
+  progress_percentage: number;
+}
+
+export interface InvestmentTransaction {
+  id: number;
+  user_investment: number;
+  user_email: string;
+  investment_plan: string;
+  transaction_type: 'investment' | 'profit' | 'withdrawal';
+  amount: number;
+  reference: string;
+  description?: string;
+    status?: 'pending' | 'processing' | 'completed' | 'failed';  // Add this property
+  created_at: string;
+}
+
+export interface CreateInvestmentData {
+  plan: number;
+  amount: number;
 }
 
 export interface UserTask {

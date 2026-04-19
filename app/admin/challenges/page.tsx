@@ -10,7 +10,7 @@ import { ChallengeParticipant as ImportedChallengeParticipant } from '@/libs/typ
 import { ADMIN_STYLES } from '../_style/adminPageStyles';
 import {
   Search, Eye, RefreshCw, Users, Award,
-  TrendingUp, Phone, MapPin, FileText, Shield, CheckCircle, AlertCircle,
+   Phone, MapPin, FileText, Shield, CheckCircle, AlertCircle,
 } from 'lucide-react';
 
 interface Participant extends Partial<ImportedChallengeParticipant> {

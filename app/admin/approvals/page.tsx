@@ -1,4 +1,4 @@
-// src/app/admin/user-investments/page.tsx
+// src/app/admin/approvals/page.tsx
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -7,88 +7,96 @@ import { adminService } from '@/libs/services/admin.service';
 import { useToast } from '@/libs/src/contexts/ToastContext';
 import { formatCurrency, formatDate } from '@/libs/utils/format';
 import { ADMIN_STYLES } from '../_style/adminPageStyles';
-import { Search, Eye, CheckCircle, XCircle, Award, RefreshCw, Send, X } from 'lucide-react';
+import {
+  Search, Eye, CheckCircle, XCircle, RefreshCw,
+ Award, Send, Medal, Star, Crown, X,
+} from 'lucide-react';
 
-interface Investment {
-  id: number;
-  user_email: string;
-  plan_name: string;
-  amount: number;
-  expected_return_amount: number;
+interface TaskInvestment {
+  id: number; user_email: string; task_title: string;
+  tier: 'bronze' | 'silver' | 'gold'; amount: number; reward_amount: number;
   status: 'pending' | 'active' | 'completed' | 'cancelled';
-  days_remaining: number;
-  progress_percentage: number;
-  created_at: string;
-  start_date?: string;
-  end_date?: string;
+  admin_notes?: string; start_date?: string; end_date?: string;
+  created_at: string; days_remaining: number; progress_percentage: number; profit: number;
 }
+
+const TIER_ICONS = { bronze: Medal, silver: Star, gold: Crown };
 
 function Spinner() {
   return (
     <div className="adm-loader-page">
       <div className="adm-loader-inner">
         <svg className="adm-spinner" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-        <p className="adm-loader-text">Loading investments…</p>
+        <p className="adm-loader-text">Loading approvals…</p>
       </div>
     </div>
   );
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const cls = status === 'active' ? 'active' : status === 'pending' ? 'pending' : status === 'completed' ? 'completed' : 'cancelled';
-  const labels: Record<string,string> = { pending:'Pending Verification', active:'Active', completed:'Completed', cancelled:'Cancelled' };
-  return <span className={`adm-badge ${cls}`}><span className="adm-badge-dot" />{labels[status] || status}</span>;
+  const s = status === 'active' ? 'active' : status === 'pending' ? 'pending' : status === 'completed' ? 'completed' : 'cancelled';
+  const labels: Record<string, string> = {
+    pending: 'Pending Verification', active: 'Active — Countdown',
+    completed: 'Completed', cancelled: 'Cancelled',
+  };
+  return (
+    <span className={`adm-badge ${s}`}>
+      <span className="adm-badge-dot" />{labels[status] || status}
+    </span>
+  );
 }
 
-export default function AdminUserInvestmentsPage() {
-  const [investments, setInvestments] = useState<Investment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<Investment['status'] | 'all'>('all');
-  const [selectedInv, setSelectedInv] = useState<Investment | null>(null);
-  const [showDetails, setShowDetails] = useState(false);
-  const [showReject, setShowReject] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
+function TierBadge({ tier }: { tier: string }) {
+  const Icon = TIER_ICONS[tier as keyof typeof TIER_ICONS] || Medal;
+  const cls = tier === 'bronze' ? 'ds-tier-bronze' : tier === 'silver' ? 'ds-tier-silver' : 'ds-tier-gold';
+  return (
+    <span className={`adm-badge ${cls}`} style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11 }}>
+      <Icon size={9} />{tier.charAt(0).toUpperCase() + tier.slice(1)}
+    </span>
+  );
+}
+
+export default function AdminApprovalsPage() {
+  const [investments, setInvestments]         = useState<TaskInvestment[]>([]);
+  const [loading, setLoading]                 = useState(true);
+  const [searchTerm, setSearchTerm]           = useState('');
+  const [statusFilter, setStatusFilter]       = useState('all');
+  const [selectedInv, setSelectedInv]         = useState<TaskInvestment | null>(null);
+  const [showDetails, setShowDetails]         = useState(false);
+  const [showReject, setShowReject]           = useState(false);
+  const [rejectReason, setRejectReason]       = useState('');
   const { showToast } = useToast();
 
+  const fetch = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await adminService.getAllTaskInvestments();
+      setInvestments(Array.isArray(data) ? data : []);
+    } catch { showToast('Failed to fetch task investments', 'error'); setInvestments([]); }
+    finally { setLoading(false); }
+  }, [showToast]);
 
-// ... inside your component
-const fetch = useCallback(async (): Promise<void> => {
-  setLoading(true);
-  try {
-    const data = await adminService.getAllUserInvestments();
-    setInvestments(Array.isArray(data) ? data : []);
-  } catch {
-    showToast('Failed to fetch investments', 'error');
-    setInvestments([]);
-  } finally {
-    setLoading(false);
-  }
-}, [showToast]); // Add any dependencies that fetch uses
-
-useEffect(() => { 
-  fetch(); 
-}, [fetch]); // Now fetch is a stable dependency
+  useEffect(() => { fetch(); }, [fetch]);
 
   const handleVerify = async (id: number) => {
-    try { await adminService.verifyUserInvestment(id); showToast('Verified! Countdown started.', 'success'); fetch(); }
+    try { await adminService.verifyTaskInvestment(id); showToast('Verified! Countdown started.', 'success'); fetch(); }
     catch { showToast('Failed to verify', 'error'); }
   };
 
   const handleReject = async (id: number) => {
-    try { await adminService.rejectUserInvestment(id, rejectReason); showToast('Rejected', 'success'); setShowReject(false); setRejectReason(''); fetch(); }
+    try { await adminService.rejectTaskInvestment(id, rejectReason); showToast('Rejected', 'success'); setShowReject(false); setRejectReason(''); fetch(); }
     catch { showToast('Failed to reject', 'error'); }
   };
 
   const handleComplete = async (id: number) => {
     if (!confirm('Mark as completed?')) return;
-    try { await adminService.completeUserInvestment(id); showToast('Marked as completed', 'success'); fetch(); }
+    try { await adminService.completeTaskInvestment(id); showToast('Marked as completed', 'success'); fetch(); }
     catch { showToast('Failed', 'error'); }
   };
 
   const filtered = investments.filter(i =>
     (i.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     i.plan_name?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+     i.task_title?.toLowerCase().includes(searchTerm.toLowerCase())) &&
     (statusFilter === 'all' || i.status === statusFilter)
   );
 
@@ -97,8 +105,19 @@ useEffect(() => {
     pending:     investments.filter(i => i.status === 'pending').length,
     active:      investments.filter(i => i.status === 'active').length,
     completed:   investments.filter(i => i.status === 'completed').length,
-    totalAmount: investments.reduce((s: number, i: Investment) => s + (i.amount || 0), 0),
+    totalAmount: investments.reduce((s, i) => s + (i.amount || 0), 0),
   };
+
+  const detailRows = selectedInv ? [
+    ['User',        selectedInv.user_email],
+    ['Task',        selectedInv.task_title],
+    ['Investment',  formatCurrency(selectedInv.amount)],
+    ['Reward',      formatCurrency(selectedInv.reward_amount)],
+    ['Profit',      formatCurrency(selectedInv.profit)],
+    ['Invested On', formatDate(selectedInv.created_at)],
+    ...(selectedInv.start_date ? [['Start Date', formatDate(selectedInv.start_date)]] : []),
+    ...(selectedInv.end_date   ? [['End Date',   formatDate(selectedInv.end_date)]]   : []),
+  ] : [];
 
   return (
     <div className="adm adm-root">
@@ -106,8 +125,8 @@ useEffect(() => {
 
       <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
         <div>
-          <h1 className="adm-title">User Investments</h1>
-          <p className="adm-subtitle">Verify and manage user investment requests</p>
+          <h1 className="adm-title">Investment Approvals</h1>
+          <p className="adm-subtitle">Verify and manage user task investments</p>
         </div>
         <button className="adm-btn-ghost" onClick={fetch}><RefreshCw size={13} /> Refresh</button>
       </div>
@@ -132,16 +151,17 @@ useEffect(() => {
         <div className="adm-table-card" style={{ padding:'48px 24px', textAlign:'center' }}>
           <Award size={28} color="#ddd" style={{ marginBottom:12 }} />
           <p style={{ fontSize:12.5, color:'#bbb', marginBottom:6 }}>No investment requests yet</p>
-          <p style={{ fontSize:11.5, color:'#ddd' }}>When users invest, their requests will appear here for verification.</p>
+          <p style={{ fontSize:11.5, color:'#ddd' }}>When users invest in tasks, their requests will appear here.</p>
         </div>
       ) : (
         <>
+          {/* Filters */}
           <div className="adm-toolbar">
             <div className="adm-search-wrap">
               <Search size={13} color="#ccc" />
-              <input className="adm-search-input" placeholder="Search by user or plan…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+              <input className="adm-search-input" placeholder="Search by user or task…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
-            <select className="adm-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value as Investment['status'] | 'all')}>
+            <select className="adm-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
               <option value="active">Active</option>
@@ -149,26 +169,30 @@ useEffect(() => {
             </select>
           </div>
 
+          {/* Table */}
           <div className="adm-table-card">
             <div style={{ overflowX:'auto' }}>
               <table className="adm-table">
                 <thead>
-                  <tr><th>User</th><th>Plan</th><th>Amount</th><th>Expected Return</th><th>Status</th><th>Days Left</th><th>Actions</th></tr>
+                  <tr><th>User</th><th>Task / Tier</th><th>Amount</th><th>Reward</th><th>Status</th><th>Days Left</th><th>Actions</th></tr>
                 </thead>
                 <tbody>
                   {filtered.length === 0 ? (
                     <tr className="adm-empty-row"><td colSpan={7}>No matching results</td></tr>
-                  ) : filtered.map((inv: Investment) => (
+                  ) : filtered.map(inv => (
                     <tr key={inv.id}>
                       <td style={{ fontSize:12 }}>{inv.user_email}</td>
-                      <td style={{ fontWeight:500 }}>{inv.plan_name}</td>
-                      <td style={{ fontWeight:600 }}>{formatCurrency(inv.amount)}</td>
-                      <td style={{ fontWeight:600, color:'#16a34a' }}>{formatCurrency(inv.expected_return_amount)}</td>
+                      <td>
+                        <p style={{ fontWeight:500, fontSize:12.5, color:'#1a1a1a', marginBottom:4 }}>{inv.task_title}</p>
+                        <TierBadge tier={inv.tier} />
+                      </td>
+                      <td style={{ fontWeight:600, color:'#1a1a1a' }}>{formatCurrency(inv.amount)}</td>
+                      <td style={{ fontWeight:600, color:'#16a34a' }}>{formatCurrency(inv.reward_amount)}</td>
                       <td><StatusBadge status={inv.status} /></td>
                       <td>
                         {inv.status === 'active' ? (
                           <div>
-                            <p style={{ fontSize:12.5, fontWeight:600, marginBottom:4 }}>{inv.days_remaining}d</p>
+                            <p style={{ fontSize:12.5, fontWeight:600, color:'#1a1a1a', marginBottom:4 }}>{inv.days_remaining}d</p>
                             <div style={{ width:64, height:3, background:'#f0f0f0', borderRadius:2 }}>
                               <div style={{ height:'100%', background:'linear-gradient(135deg,#f97316,#ea580c)', borderRadius:2, width:`${inv.progress_percentage}%` }} />
                             </div>
@@ -177,15 +201,15 @@ useEffect(() => {
                       </td>
                       <td>
                         <div style={{ display:'flex', gap:4 }}>
-                          <button className="adm-icon-btn" onClick={() => { setSelectedInv(inv); setShowDetails(true); }}><Eye size={14} /></button>
+                          <button className="adm-icon-btn" title="View" onClick={() => { setSelectedInv(inv); setShowDetails(true); }}><Eye size={14} /></button>
                           {inv.status === 'pending' && (
                             <>
-                              <button className="adm-icon-btn success" onClick={() => handleVerify(inv.id)}><CheckCircle size={14} /></button>
-                              <button className="adm-icon-btn danger" onClick={() => { setSelectedInv(inv); setShowReject(true); }}><XCircle size={14} /></button>
+                              <button className="adm-icon-btn success" title="Verify" onClick={() => handleVerify(inv.id)}><CheckCircle size={14} /></button>
+                              <button className="adm-icon-btn danger" title="Reject" onClick={() => { setSelectedInv(inv); setShowReject(true); }}><XCircle size={14} /></button>
                             </>
                           )}
                           {inv.status === 'active' && (
-                            <button className="adm-icon-btn" onClick={() => handleComplete(inv.id)}><Award size={14} /></button>
+                            <button className="adm-icon-btn" title="Complete" onClick={() => handleComplete(inv.id)}><Award size={14} /></button>
                           )}
                         </div>
                       </td>
@@ -206,23 +230,19 @@ useEffect(() => {
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:18 }}>
               <div>
                 <p className="adm-modal-title">Investment Details</p>
-                <p className="adm-modal-sub">{selectedInv.plan_name}</p>
+                <p className="adm-modal-sub">{selectedInv.task_title} · <TierBadge tier={selectedInv.tier} /></p>
               </div>
               <button className="adm-icon-btn" onClick={() => setShowDetails(false)}><X size={14} /></button>
             </div>
             <div className="adm-detail-section">
               <div className="adm-detail-grid">
-                {[
-                  ['User',            selectedInv.user_email],
-                  ['Plan',            selectedInv.plan_name],
-                  ['Amount',          formatCurrency(selectedInv.amount)],
-                  ['Expected Return', formatCurrency(selectedInv.expected_return_amount)],
-                  ['Invested On',     formatDate(selectedInv.created_at)],
-                  ...(selectedInv.start_date ? [['Start Date', formatDate(selectedInv.start_date)]] : []),
-                  ...(selectedInv.end_date   ? [['End Date',   formatDate(selectedInv.end_date)]]   : []),
-                ].map(([l,v]) => (
+                {detailRows.map(([l, v]) => (
                   <div key={String(l)}><p className="adm-detail-label">{l}</p><p className="adm-detail-value">{v}</p></div>
                 ))}
+                <div>
+                  <p className="adm-detail-label">Tier</p>
+                  <div style={{ marginTop:4 }}><TierBadge tier={selectedInv.tier} /></div>
+                </div>
                 <div>
                   <p className="adm-detail-label">Status</p>
                   <div style={{ marginTop:4 }}><StatusBadge status={selectedInv.status} /></div>

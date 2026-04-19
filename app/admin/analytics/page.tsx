@@ -6,19 +6,14 @@ import { Card } from '@/layout/components/Card';
 import { Button } from '@/layout/components/Button';
 import {
   TrendingUp,
-  TrendingDown,
   DollarSign,
   Users,
   Briefcase,
-  Calendar,
   Download,
-  RefreshCw
 } from 'lucide-react';
 import {
   AreaChart,
   Area,
-  BarChart,
-  Bar,
   LineChart,
   Line,
   XAxis,

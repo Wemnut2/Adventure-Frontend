@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Send, CheckCircle, User, MapPin, DollarSign, FileText, MessageCircle, AlertCircle, XCircle, HelpCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { apiService } from "@/libs/services/api";
@@ -14,6 +14,37 @@ import {
 } from "@/libs/utils/whatsapp";
 import { useAuthStore } from "@/libs/stores/auth.store";
 
+export interface UserProfile {
+  id: number;
+  user: number;
+  full_name?: string;
+  gender?: string;
+  age?: number;
+  monthly_income?: number;
+  marital_status?: string;
+  contact_number?: string;
+  hearing_status?: string;
+  housing_situation?: string;
+  preferred_payment_method?: string;
+  location?: string;
+  challenge_status?: 'pending' | 'active' | 'completed' | 'failed' | 'payment_pending';
+  registration_fee_paid?: boolean;
+  insurance_fee_paid?: boolean;
+  total_prize?: number;
+  challenge_start_date?: string;
+  challenge_end_date?: string;
+  participant_signature?: string;
+  participant_signature_date?: string;
+  ceo_signature?: string;
+  ceo_signature_date?: string;
+  challenge_completed_date?: string;
+  challenge_reward_claimed?: boolean;
+  admin_notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+
 type FormData = {
   fullName: string; address: string; gender: string; age: string;
   monthlyIncome: string; maritalStatus: string; contactNumber: string;
@@ -22,6 +53,13 @@ type FormData = {
   reason: string; participantSignature: string; participantSignatureDate: string;
 };
 
+import { AxiosError } from 'axios';
+
+// Define the error response type
+interface ApiErrorResponse {
+  [key: string]: string | string[] | undefined;
+  non_field_errors?: string[];
+}
 type FormErrors = { [key in keyof FormData]?: string } & { general?: string };
 
 /* ─── Shared styles ─────────────────────────────────────────────────────── */
@@ -295,13 +333,39 @@ function QuickSupportButton() {
   const user = useAuthStore(s => s.user);
   const contacts = getAvailableContacts();
 
-  const handle = (type: string, isSecondary: boolean) => {
+  // Add useCallback to prevent unnecessary re-renders
+  const handle = useCallback((type: string, isSecondary: boolean) => {
     const msg = `Hello, I need help with the challenge application. Email: ${user?.email || 'N/A'}`;
-    type === 'whatsapp'
-      ? (isSecondary ? openWhatsAppSecondary(msg) : openWhatsApp(msg))
-      : (isSecondary ? openTelegramSecondary(msg) : openTelegram(msg));
+    if (type === 'whatsapp') {
+      if (isSecondary) {
+        openWhatsAppSecondary(msg);
+      } else {
+        openWhatsApp(msg);
+      }
+    } else {
+      if (isSecondary) {
+        openTelegramSecondary(msg);
+      } else {
+        openTelegram(msg);
+      }
+    }
     setOpen(false);
-  };
+  }, [user?.email]);
+
+  // Add effect to handle click outside
+  useEffect(() => {
+    if (!open) return;
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.fab')) {
+        setOpen(false);
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [open]);
 
   return (
     <div className="fab">
@@ -322,7 +386,7 @@ function QuickSupportButton() {
   );
 }
 
-function PaymentMethodModal({ isOpen, onClose, onSelect, userEmail }: {
+function PaymentMethodModal({ isOpen, onClose, onSelect }: {
   isOpen: boolean; onClose: () => void;
   onSelect: (method: string) => void; userEmail: string;
 }) {
@@ -348,7 +412,7 @@ function PaymentMethodModal({ isOpen, onClose, onSelect, userEmail }: {
             <span className="contact-btn-arrow">›</span>
           </button>
         ))}
-        <button className="modal-later" onClick={onClose}>I'll do this later</button>
+        <button className="modal-later" onClick={onClose}>I&apos;ll do this later</button>
       </div>
     </div>
   );
@@ -369,7 +433,7 @@ export default function ApplicationSection({ skipProfileCheck = false }: { skipP
   const [showPaymentModal, setShowPaymentModal]     = useState(false);
   const [submittedEmail, setSubmittedEmail]         = useState("");
   const [hasExistingApplication, setHasExisting]   = useState(false);
-  const [existingProfile, setExistingProfile]       = useState<any>(null);
+  const [existingProfile, setExistingProfile] = useState<UserProfile | null>(null);
   const [formErrors, setFormErrors]                 = useState<FormErrors>({});
   const [showErrorAlert, setShowErrorAlert]         = useState(true);
 
@@ -397,7 +461,7 @@ export default function ApplicationSection({ skipProfileCheck = false }: { skipP
       }
     };
     check();
-  }, [user, skipProfileCheck]);
+  }, [user, skipProfileCheck, router]);
 
   const validateForm = (): boolean => {
     const e: FormErrors = {};
@@ -456,25 +520,39 @@ export default function ApplicationSection({ skipProfileCheck = false }: { skipP
       });
       await apiService.patch("/auth/profile/", { status: "payment_pending" });
       await loadUser();
-      setSubmitted(true); setSubmittedEmail(formData.email);
-      setShowPaymentModal(true); setHasExisting(true);
-    } catch (err: any) {
-      const apiErrors = err?.response?.data;
-      if (apiErrors) {
-        const fe: FormErrors = {};
-        Object.keys(apiErrors).forEach(k => {
-          const v = Array.isArray(apiErrors[k]) ? apiErrors[k][0] : apiErrors[k];
-          if (k === 'non_field_errors') fe.general = v;
-          else fe[k as keyof FormData] = v;
-        });
-        setFormErrors(fe);
-        setShowErrorAlert(true);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+  setSubmitted(true);
+  setSubmittedEmail(formData.email);
+  setShowPaymentModal(true);
+  setHasExisting(true);
+} catch (err: unknown) {
+  // Type guard to check if it's an AxiosError
+  if (err instanceof AxiosError && err.response?.data) {
+    const apiErrors = err.response.data as ApiErrorResponse;
+    
+    const fe: FormErrors = {};
+    Object.keys(apiErrors).forEach((k) => {
+      const value = apiErrors[k];
+      const v = Array.isArray(value) ? value[0] : value;
+      if (k === 'non_field_errors') {
+        fe.general = v as string;
       } else {
-        setFormErrors({ general: "Something went wrong. Please try again." });
-        setShowErrorAlert(true);
+        fe[k as keyof FormData] = v as string;
       }
-    } finally {
+    });
+    setFormErrors(fe);
+    setShowErrorAlert(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else if (err instanceof Error) {
+    // Handle regular errors
+    console.error('Error:', err.message);
+    setFormErrors({ general: err.message });
+    setShowErrorAlert(true);
+  } else {
+    // Handle unknown errors
+    setFormErrors({ general: 'An unexpected error occurred' });
+    setShowErrorAlert(true);
+  }
+} finally {
       setLoading(false);
     }
   };
@@ -548,7 +626,7 @@ export default function ApplicationSection({ skipProfileCheck = false }: { skipP
             </div>
             <p className="status-title">Already Submitted</p>
             <p className="status-body">
-              You've already submitted a challenge application. Contact support if you need to make any changes.
+              You&apos;ve already submitted a challenge application. Contact support if you need to make any changes.
             </p>
             <div className="info-strip" style={{ textAlign: 'left' }}>
               <p className="info-strip-title">Application Status</p>
@@ -571,11 +649,22 @@ export default function ApplicationSection({ skipProfileCheck = false }: { skipP
             <div className="stack">
               {contacts.map((c, i) => (
                 <button key={i} className="contact-btn" onClick={() => {
-                  const msg = whatsAppMessages.updateApplication(user?.email || '', existingProfile.challenge_status || 'pending');
-                  c.type === 'whatsapp'
-                    ? (!c.isPrimary ? openWhatsAppSecondary(msg) : openWhatsApp(msg))
-                    : (!c.isPrimary ? openTelegramSecondary(msg) : openTelegram(msg));
-                }}>
+                    const msg = whatsAppMessages.updateApplication(user?.email || '', existingProfile.challenge_status || 'pending');
+                    
+                    if (c.type === 'whatsapp') {
+                      if (c.isPrimary) {
+                        openWhatsApp(msg);
+                      } else {
+                        openWhatsAppSecondary(msg);
+                      }
+                    } else {
+                      if (c.isPrimary) {
+                        openTelegram(msg);
+                      } else {
+                        openTelegramSecondary(msg);
+                      }
+                    }
+                  }}>
                   <span className="contact-btn-icon"><MessageCircle size={14} /></span>
                   <span>
                     <p className="contact-btn-label">{c.label}</p>

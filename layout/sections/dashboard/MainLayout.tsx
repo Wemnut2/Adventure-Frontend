@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
-import { MessageCircle, X, Send } from 'lucide-react';
+import { MessageCircle, X } from 'lucide-react';
 import { openWhatsApp, openTelegram, whatsAppMessages } from '@/libs/utils/whatsapp';
 import { useAuthStore } from '@/libs/stores/auth.store';
 import { DASH_STYLES } from '@/app/styles/dashboardStyles';

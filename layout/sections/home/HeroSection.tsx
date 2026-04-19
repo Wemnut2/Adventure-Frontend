@@ -1,271 +1,192 @@
-"use client";
+// src/app/(landing)/HeroSection.tsx
+'use client';
 
-import Link from "next/link";
-import { Clock, Award, Shield, ArrowRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import Link from 'next/link';
+import { Clock, Award, Shield, ArrowRight } from 'lucide-react';
 
 export default function HeroSection() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const stats = [
-    { icon: Clock, label: "Duration", value: "Up to 30+ days" },
-    { icon: Award, label: "Prize", value: "Life-changing Grand Prize" },
-    { icon: Shield, label: "Support", value: "24/7 Medical Support" },
+    { icon: Clock,  label: 'Duration', value: 'Up to 30+ days'          },
+    { icon: Award,  label: 'Prize',    value: 'Life-changing Grand Prize' },
+    { icon: Shield, label: 'Support',  value: '24/7 Medical Support'      },
   ];
 
   return (
-    <section className="relative min-h-[90vh] flex items-center bg-white overflow-hidden">
+    <section style={{ position:'relative', minHeight:'90vh', display:'flex', alignItems:'center', background:'#fff', overflow:'hidden' }}>
       <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
+
+        .hero-root * { font-family: 'DM Sans', sans-serif; box-sizing: border-box; }
+
+        /* Grid bg */
+        .hero-grid-bg {
+          position: absolute; inset: 0; pointer-events: none;
+          background-image:
+            linear-gradient(to right,  rgba(0,0,0,0.03) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px);
+          background-size: 60px 60px;
+          opacity: 0.4;
+        }
+        /* Radial glow */
+        .hero-glow {
+          position: absolute; inset: 0; pointer-events: none;
+          background:
+            radial-gradient(circle at 20% 30%, rgba(249,115,22,0.07) 0%, transparent 50%),
+            radial-gradient(circle at 80% 70%, rgba(249,115,22,0.04) 0%, transparent 50%);
         }
 
-        @keyframes pulse-glow {
-          0%, 100% { opacity: 0.4; }
-          50% { opacity: 0.7; }
-        }
-
-        @keyframes slideInLeft {
-          from {
-            opacity: 0;
-            transform: translateX(-30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        @keyframes slideInRight {
-          from {
-            opacity: 0;
-            transform: translateX(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        @keyframes scaleIn {
-          from {
-            opacity: 0;
-            transform: scale(0.9);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
-        .hero-gradient {
-          background: radial-gradient(circle at 20% 30%, rgba(249, 115, 22, 0.08) 0%, transparent 50%),
-                      radial-gradient(circle at 80% 70%, rgba(249, 115, 22, 0.05) 0%, transparent 50%);
-        }
-
-        .stat-card {
-          background: rgba(255, 255, 255, 0.9);
-          backdrop-filter: blur(8px);
-          border: 1px solid rgba(0, 0, 0, 0.06);
-          border-radius: 12px;
-          padding: 16px 24px;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          animation: float 6s ease-in-out infinite;
-        }
-
-        .stat-card:nth-child(2) {
-          animation-delay: 0.5s;
-        }
-
-        .stat-card:nth-child(3) {
-          animation-delay: 1s;
-        }
-
-        .stat-card:hover {
-          transform: translateY(-4px);
-          border-color: rgba(249, 115, 22, 0.3);
-          box-shadow: 0 8px 24px rgba(249, 115, 22, 0.1);
-        }
-
-        .btn-primary {
-          padding: 14px 32px;
-          background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-          color: white;
-          border: none;
-          border-radius: 12px;
-          font-size: 14px;
-          font-weight: 500;
-          letter-spacing: 0.02em;
-          text-decoration: none;
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);
-        }
-
-        .btn-primary:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 20px rgba(249, 115, 22, 0.3);
-        }
-
-        .btn-secondary {
-          padding: 14px 32px;
-          background: transparent;
-          color: #1a1a1a;
-          border: 1px solid rgba(0, 0, 0, 0.14);
-          border-radius: 12px;
-          font-size: 14px;
-          font-weight: 500;
-          letter-spacing: 0.02em;
-          text-decoration: none;
-          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .btn-secondary:hover {
-          background: rgba(0, 0, 0, 0.02);
-          border-color: rgba(0, 0, 0, 0.24);
-          transform: translateY(-2px);
-        }
-
-        .badge {
-          display: inline-flex;
-          align-items: center;
+        /* Badge */
+        .hero-badge {
+          display: inline-flex; align-items: center; gap: 8px;
           padding: 6px 16px;
-          background: rgba(249, 115, 22, 0.1);
-          border: 1px solid rgba(249, 115, 22, 0.2);
-          border-radius: 30px;
-          font-size: 11px;
-          font-weight: 600;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          color: #f97316;
-          animation: slideInLeft 0.6s ease forwards;
+          background: rgba(249,115,22,0.08); border: 1px solid rgba(249,115,22,0.18);
+          border-radius: 30px; font-size: 11px; font-weight: 600;
+          letter-spacing: 0.08em; text-transform: uppercase; color: #f97316;
+          animation: heroFadeUp .6s ease forwards;
         }
+        .hero-badge-dot {
+          position: relative; width: 7px; height: 7px;
+        }
+        .hero-badge-dot-inner {
+          position: absolute; inset: 0; border-radius: 50%; background: #f97316;
+        }
+        .hero-badge-dot-ping {
+          position: absolute; inset: 0; border-radius: 50%;
+          background: rgba(249,115,22,0.4); animation: heroPing 1.4s ease infinite;
+        }
+        @keyframes heroPing { 75%, 100% { transform: scale(2); opacity: 0; } }
 
+        /* Title */
         .hero-title {
           font-family: 'DM Serif Display', serif;
-          font-size: clamp(48px, 8vw, 80px);
-          font-weight: 500;
-          line-height: 1.1;
-          letter-spacing: -0.02em;
-          color: #1a1a1a;
-          margin: 24px 0 20px;
-          animation: slideInRight 0.8s ease forwards;
+          font-size: clamp(44px, 8vw, 78px);
+          font-weight: 500; line-height: 1.08; letter-spacing: -0.025em;
+          color: #1a1a1a; margin: 22px 0 18px;
+          animation: heroSlideRight .8s ease forwards;
+        }
+        .hero-title-accent { color: #f97316; }
+
+        /* Subtitle */
+        .hero-sub {
+          font-size: 17px; line-height: 1.65; color: #888;
+          max-width: 580px; margin: 0 auto 32px;
+          animation: heroFadeUp .8s ease .2s forwards; opacity: 0;
         }
 
-        .hero-title span {
-          color: #f97316;
+        /* CTA buttons */
+        .hero-cta-group {
+          display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+          margin-bottom: 64px;
+          animation: heroFadeUp .6s ease .4s forwards; opacity: 0;
         }
-
-        .hero-subtitle {
-          font-size: 18px;
-          line-height: 1.6;
-          color: #666;
-          max-width: 600px;
-          margin-bottom: 32px;
-          animation: slideInLeft 0.8s ease 0.2s forwards;
-          opacity: 0;
-          animation-fill-mode: forwards;
+        .hero-btn-primary {
+          padding: 13px 30px;
+          background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+          color: #fff; border: none; border-radius: 12px;
+          font-size: 13.5px; font-weight: 500; letter-spacing: 0.02em;
+          text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+          cursor: pointer;
+          box-shadow: 0 4px 14px rgba(249,115,22,0.25);
+          transition: opacity .18s, transform .18s, box-shadow .18s;
         }
+        .hero-btn-primary:hover { opacity:.9; transform:translateY(-2px); box-shadow:0 8px 20px rgba(249,115,22,0.28); }
 
-        @media (max-width: 768px) {
-          .hero-title {
-            font-size: 40px;
-          }
-          .hero-subtitle {
-            font-size: 16px;
-          }
-          .stat-card {
-            padding: 12px 16px;
-          }
+        .hero-btn-ghost {
+          padding: 13px 30px;
+          background: transparent; color: #1a1a1a;
+          border: 1px solid rgba(0,0,0,0.12); border-radius: 12px;
+          font-size: 13.5px; font-weight: 500; letter-spacing: 0.02em;
+          text-decoration: none;
+          transition: background .18s, border-color .18s, transform .18s;
+        }
+        .hero-btn-ghost:hover { background:rgba(0,0,0,0.02); border-color:rgba(0,0,0,0.22); transform:translateY(-2px); }
+
+        /* Stat cards */
+        .hero-stats {
+          display: flex; flex-wrap: wrap; justify-content: center; gap: 14px;
+          animation: heroFadeUp .8s ease .6s forwards; opacity: 0;
+        }
+        .hero-stat-card {
+          display: flex; align-items: center; gap: 12px;
+          background: #fff; border: 1px solid rgba(0,0,0,0.08);
+          border-radius: 13px; padding: 14px 20px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+          animation: heroFloat 6s ease-in-out infinite;
+          transition: border-color .2s, box-shadow .2s, transform .2s;
+        }
+        .hero-stat-card:hover { border-color:rgba(249,115,22,0.25); box-shadow:0 6px 20px rgba(249,115,22,0.08); transform:translateY(-3px); }
+        .hero-stat-card:nth-child(2) { animation-delay:.5s; }
+        .hero-stat-card:nth-child(3) { animation-delay:1s; }
+        .hero-stat-icon {
+          width: 38px; height: 38px; border-radius: 10px;
+          background: rgba(249,115,22,0.08);
+          display: flex; align-items: center; justify-content: center; flex-shrink:0;
+        }
+        .hero-stat-label { font-size: 11px; color: #aaa; font-weight: 500; margin-bottom: 3px; }
+        .hero-stat-value { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+
+        /* Animations */
+        @keyframes heroFadeUp   { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes heroSlideRight { from { opacity:0; transform:translateX(-20px) } to { opacity:1; transform:translateX(0) } }
+        @keyframes heroFloat { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-8px) } }
+
+        @media (max-width: 640px) {
+          .hero-title { font-size: 40px; }
+          .hero-sub    { font-size: 15px; }
+          .hero-stat-card { padding: 12px 14px; }
         }
       `}</style>
 
-      {/* Animated background */}
-      <div className="absolute inset-0 hero-gradient" />
-      
-      {/* Grid pattern */}
-      <div 
-        className="absolute inset-0 opacity-30"
-        style={{
-          backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
-                            linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px)`,
-          backgroundSize: '60px 60px',
-        }}
-      />
+      <div className="hero-glow" />
+      <div className="hero-grid-bg" />
 
-      <div className="landing-container relative w-full">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center">
-            {/* Badge */}
-            <div className={`badge ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-              <span className="relative flex h-2 w-2 mr-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
-              </span>
-              Can You Handle Complete Isolation?
+      <div className="hero-root" style={{ position:'relative', width:'100%', maxWidth:1200, margin:'0 auto', padding:'0 24px', textAlign:'center' }}>
+
+        {/* Badge */}
+        <div className={`hero-badge`}>
+          <span className="hero-badge-dot">
+            <span className="hero-badge-dot-ping" />
+            <span className="hero-badge-dot-inner" />
+          </span>
+          Can You Handle Complete Isolation?
+        </div>
+
+        {/* Title */}
+        <h1 className="hero-title">
+          The Adventure<br />
+          <span className="hero-title-accent">Challenge</span>
+        </h1>
+
+        {/* Subtitle */}
+        <p className="hero-sub">
+          Test your endurance, patience, and mental strength in total solitude —
+          and walk away with a life-changing reward.
+        </p>
+
+        {/* CTAs */}
+        <div className="hero-cta-group">
+          <Link href="/apply" className="hero-btn-primary">
+            Apply Now <ArrowRight size={15} />
+          </Link>
+          <Link href="/about" className="hero-btn-ghost">
+            Learn More
+          </Link>
+        </div>
+
+        {/* Stats */}
+        <div className="hero-stats">
+          {stats.map((s, i) => (
+            <div key={i} className="hero-stat-card">
+              <div className="hero-stat-icon">
+                <s.icon size={17} color="#f97316" />
+              </div>
+              <div style={{ textAlign:'left' }}>
+                <p className="hero-stat-label">{s.label}</p>
+                <p className="hero-stat-value">{s.value}</p>
+              </div>
             </div>
-
-            {/* Title */}
-            <h1 className="hero-title">
-              The Adventure
-              <span> Challenge</span>
-            </h1>
-
-            {/* Subtitle */}
-            <p className="hero-subtitle mx-auto">
-              Test your endurance, patience, and mental strength in total solitude — 
-              and walk away with a life-changing reward.
-            </p>
-
-            {/* CTAs */}
-            <div 
-              className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
-              style={{ 
-                animation: 'scaleIn 0.6s ease 0.4s forwards',
-                opacity: 0,
-                animationFillMode: 'forwards'
-              }}
-            >
-              <Link href="apply" className="btn-primary">
-                Apply Now
-                <ArrowRight size={16} />
-              </Link>
-              <Link href="about" className="btn-secondary">
-                Learn More
-              </Link>
-            </div>
-
-            {/* Stats */}
-            <div 
-              className="flex flex-wrap justify-center gap-4 md:gap-6"
-              style={{ 
-                animation: 'fadeUp 0.8s ease 0.6s forwards',
-                opacity: 0,
-                animationFillMode: 'forwards'
-              }}
-            >
-              {stats.map((stat, index) => (
-                <div key={index} className="stat-card">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center">
-                      <stat.icon className="w-5 h-5 text-orange-500" />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-xs text-gray-500 font-medium mb-0.5">{stat.label}</p>
-                      <p className="text-sm font-semibold text-gray-900">{stat.value}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </section>

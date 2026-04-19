@@ -76,20 +76,20 @@ export const useChangePassword = () => {
 /* ================= ACTIVITIES ================= */
 
 export const useActivities = () => {
-  const fetchActivities = useAuthStore((state) => state.fetchActivities);
-  const activities = useAuthStore((state) => state.activities);
-  const isLoading = useAuthStore((state) => state.isLoading);
-
-  useQuery({
+  const queryClient = useQueryClient();
+  
+  const query = useQuery({
     queryKey: ['activities'],
-    queryFn: async () => {
-      await fetchActivities();
-      return true;
-    },
-    retry: false,
+    queryFn: () => authService.getMyActivities(),
+    staleTime: 5 * 60 * 1000,
   });
 
-  return { activities, isLoading };
+  return {
+    activities: query.data || [],
+    isLoading: query.isLoading,
+    refetch: query.refetch,
+    mutate: () => queryClient.invalidateQueries({ queryKey: ['activities'] })
+  };
 };
 
 /* ================= SUBSCRIPTION ================= */

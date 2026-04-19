@@ -1,78 +1,98 @@
-// src/app/admin/investments/page.tsx
+// src/app/admin/investment-plans/page.tsx
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { Dialog } from '@/layout/components/Dialog';
 import { adminService } from '@/libs/services/admin.service';
 import { useToast } from '@/libs/src/contexts/ToastContext';
-import { formatCurrency, formatDate } from '@/libs/utils/format';
-import { Investment } from '@/libs/types';
+import { formatCurrency } from '@/libs/utils/format';
 import { ADMIN_STYLES } from '../_style/adminPageStyles';
-import { Search, RefreshCw, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, RefreshCw, TrendingUp, X } from 'lucide-react';
 
-function Spinner({ text = 'Loading…' }: { text?: string }) {
+interface InvestmentPlan {
+  id: number; name: string; description: string;
+  min_amount: number; max_amount: number | null;
+  expected_return: number; duration_days: number;
+  is_active: boolean; created_at: string;
+}
+
+const EMPTY_FORM = {
+  name: '', description: '', min_amount: '', max_amount: '',
+  expected_return: '', duration_days: '', is_active: true,
+};
+
+function Spinner() {
   return (
     <div className="adm-loader-page">
       <div className="adm-loader-inner">
         <svg className="adm-spinner" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-        <p className="adm-loader-text">{text}</p>
+        <p className="adm-loader-text">Loading plans…</p>
       </div>
     </div>
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const s = status === 'active' ? 'active' : status === 'pending' ? 'pending' : status === 'completed' ? 'completed' : 'cancelled';
-  return (
-    <span className={`adm-badge ${s}`}>
-      <span className="adm-badge-dot" />
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
-  );
-}
-
-export default function AdminInvestmentsPage() {
-  const [investments, setInvestments]   = useState<Investment[]>([]);
+export default function AdminInvestmentPlansPage() {
+  const [plans, setPlans]               = useState<InvestmentPlan[]>([]);
   const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState<string | null>(null);
-  const [searchTerm, setSearchTerm]     = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [showModal, setShowModal]       = useState(false);
+  const [editingPlan, setEditingPlan]   = useState<InvestmentPlan | null>(null);
+  const [form, setForm]                 = useState(EMPTY_FORM);
   const { showToast } = useToast();
 
-  const fetchInvestments = useCallback(async () => {
-    setLoading(true); setError(null);
+  const fetch = useCallback(async () => {
+    setLoading(true);
     try {
-      const data = await adminService.getAllInvestments();
-      setInvestments(Array.isArray(data) ? data : []);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to fetch investments';
-      setError(msg); showToast(msg, 'error'); setInvestments([]);
-    } finally { setLoading(false); }
+      const data = await adminService.getAllInvestmentPlans();
+      setPlans(Array.isArray(data) ? data : []);
+    } catch { showToast('Failed to fetch investment plans', 'error'); }
+    finally { setLoading(false); }
   }, [showToast]);
 
-  useEffect(() => { fetchInvestments(); }, [fetchInvestments]);
+  useEffect(() => { fetch(); }, [fetch]);
 
-  const handleApprove = async (id: number) => {
+  const resetForm = () => { setForm(EMPTY_FORM); setEditingPlan(null); };
+
+  const handleSave = async () => {
+    if (!form.name || !form.description || !form.min_amount || !form.expected_return || !form.duration_days) {
+      showToast('Please fill all required fields', 'error'); return;
+    }
+    const payload = {
+      name: form.name, description: form.description,
+      min_amount: parseFloat(form.min_amount),
+      max_amount: form.max_amount ? parseFloat(form.max_amount) : null,
+      expected_return: parseFloat(form.expected_return),
+      duration_days: parseInt(form.duration_days),
+      is_active: form.is_active,
+    };
     try {
-      await adminService.approveInvestment(id);
-      showToast('Investment approved', 'success'); fetchInvestments();
-    } catch { showToast('Failed to approve', 'error'); }
+      if (editingPlan) { await adminService.updateInvestmentPlan(editingPlan.id, payload); showToast('Plan updated', 'success'); }
+      else             { await adminService.createInvestmentPlan(payload);                  showToast('Plan created', 'success'); }
+      setShowModal(false); resetForm(); fetch();
+    } catch { showToast('Failed to save plan', 'error'); }
   };
 
-  const filtered = investments.filter(inv => {
-    const q = searchTerm.toLowerCase();
-    return (
-      (inv.user_email?.toLowerCase().includes(q) || inv.plan_name?.toLowerCase().includes(q)) &&
-      (statusFilter === 'all' || inv.status === statusFilter)
-    );
-  });
-
-  const stats = {
-    total:       investments.length,
-    active:      investments.filter(i => i.status === 'active').length,
-    pending:     investments.filter(i => i.status === 'pending').length,
-    completed:   investments.filter(i => i.status === 'completed').length,
-    totalAmount: investments.reduce((s, i) => s + (i.amount || 0), 0),
+  const handleDelete = async (id: number) => {
+    if (!confirm('Delete this investment plan?')) return;
+    try { await adminService.deleteInvestmentPlan(id); showToast('Plan deleted', 'success'); fetch(); }
+    catch { showToast('Failed to delete', 'error'); }
   };
+
+  const openEdit = (plan: InvestmentPlan) => {
+    setEditingPlan(plan);
+    setForm({
+      name: plan.name, description: plan.description,
+      min_amount: plan.min_amount.toString(),
+      max_amount: plan.max_amount?.toString() || '',
+      expected_return: plan.expected_return.toString(),
+      duration_days: plan.duration_days.toString(),
+      is_active: plan.is_active,
+    });
+    setShowModal(true);
+  };
+
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setForm(p => ({ ...p, [k]: e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value }));
 
   return (
     <div className="adm adm-root">
@@ -80,86 +100,118 @@ export default function AdminInvestmentsPage() {
 
       <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
         <div>
-          <h1 className="adm-title">Investments</h1>
-          <p className="adm-subtitle">Review and manage all user investments</p>
+          <h1 className="adm-title">Investment Plans</h1>
+          <p className="adm-subtitle">Create and manage investment plans for users · {plans.length} total</p>
         </div>
-        <button className="adm-btn-ghost" onClick={fetchInvestments}><RefreshCw size={13} /> Refresh</button>
-      </div>
-
-      {/* Stats */}
-      <div className="adm-stat-grid" style={{ gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))' }}>
-        {[
-          { label:'Total',        value: stats.total },
-          { label:'Active',       value: stats.active },
-          { label:'Pending',      value: stats.pending },
-          { label:'Completed',    value: stats.completed },
-          { label:'Total Amount', value: formatCurrency(stats.totalAmount) },
-        ].map(s => (
-          <div className="adm-stat-card" key={s.label}>
-            <p className="adm-stat-label">{s.label}</p>
-            <p className="adm-stat-value">{s.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Filters */}
-      <div className="adm-toolbar">
-        <div className="adm-search-wrap">
-          <Search size={13} color="#ccc" />
-          <input className="adm-search-input" placeholder="Search user or plan…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+        <div style={{ display:'flex', gap:8 }}>
+          <button className="adm-btn-ghost" onClick={fetch}><RefreshCw size={13} /> Refresh</button>
+          <button className="adm-btn-primary" onClick={() => { resetForm(); setShowModal(true); }}>
+            <Plus size={13} /> Create Plan
+          </button>
         </div>
-        <select className="adm-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-          <option value="all">All Status</option>
-          <option value="pending">Pending</option>
-          <option value="active">Active</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
       </div>
 
-      {loading ? <Spinner text="Loading investments…" /> : error ? (
-        <div className="adm-loader-page">
-          <div className="adm-loader-inner">
-            <AlertCircle size={26} color="#e05252" />
-            <p className="adm-loader-text" style={{ color:'#e05252' }}>{error}</p>
-            <button className="adm-btn-primary adm-btn-sm" style={{ marginTop:12 }} onClick={fetchInvestments}>Try Again</button>
-          </div>
+      {loading ? <Spinner /> : plans.length === 0 ? (
+        <div className="adm-table-card" style={{ padding:'48px 24px', textAlign:'center' }}>
+          <TrendingUp size={28} color="#ddd" style={{ marginBottom:12 }} />
+          <p style={{ fontSize:12.5, color:'#bbb', marginBottom:14 }}>No investment plans yet</p>
+          <button className="adm-btn-primary adm-btn-sm" onClick={() => { resetForm(); setShowModal(true); }}>
+            <Plus size={12} /> Create Your First Plan
+          </button>
         </div>
       ) : (
-        <div className="adm-table-card">
-          <div style={{ overflowX:'auto' }}>
-            <table className="adm-table">
-              <thead>
-                <tr>
-                  <th>Date</th><th>User</th><th>Plan</th>
-                  <th>Amount</th><th>Profit</th><th>Status</th><th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr className="adm-empty-row">
-                    <td colSpan={7}>{searchTerm || statusFilter !== 'all' ? 'No matching investments' : 'No investments yet'}</td>
-                  </tr>
-                ) : filtered.map(inv => (
-                  <tr key={inv.id}>
-                    <td style={{ color:'#aaa', whiteSpace:'nowrap' }}>{formatDate(inv.created_at)}</td>
-                    <td>{inv.user_email}</td>
-                    <td style={{ fontWeight:500 }}>{inv.plan_name}</td>
-                    <td style={{ fontWeight:600 }}>{formatCurrency(inv.amount)}</td>
-                    <td style={{ color:'#16a34a', fontWeight:500 }}>{formatCurrency(inv.total_profit)}</td>
-                    <td><StatusBadge status={inv.status} /></td>
-                    <td>
-                      {inv.status === 'pending' && (
-                        <button className="adm-btn-success adm-btn-sm" onClick={() => handleApprove(inv.id)}>Approve</button>
-                      )}
-                    </td>
-                  </tr>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:12 }}>
+          {plans.map(plan => (
+            <div key={plan.id} className="adm-table-card" style={{ padding:'18px' }}>
+              <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:10 }}>
+                <div>
+                  <p style={{ fontSize:14, fontWeight:600, color:'#1a1a1a', marginBottom:5 }}>{plan.name}</p>
+                  <span className={`adm-badge ${plan.is_active ? 'active' : 'inactive'}`}>
+                    <span className="adm-badge-dot" />{plan.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+                <div style={{ display:'flex', gap:4 }}>
+                  <button className="adm-icon-btn" onClick={() => openEdit(plan)}><Edit size={13} /></button>
+                  <button className="adm-icon-btn danger" onClick={() => handleDelete(plan.id)}><Trash2 size={13} /></button>
+                </div>
+              </div>
+
+              {plan.description && <p style={{ fontSize:11.5, color:'#aaa', lineHeight:1.55, marginBottom:14 }}>{plan.description}</p>}
+
+              <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, paddingBottom:8, borderBottom:'1px solid rgba(0,0,0,0.05)' }}>
+                  <span style={{ color:'#aaa' }}>Expected Return</span>
+                  <span style={{ fontWeight:600, color:'#16a34a' }}>+{plan.expected_return}%</span>
+                </div>
+                {[
+                  ['Min Investment', formatCurrency(plan.min_amount)],
+                  ...(plan.max_amount ? [['Max Investment', formatCurrency(plan.max_amount)]] : []),
+                  ['Duration',       `${plan.duration_days} days`],
+                ].map(([l, v]) => (
+                  <div key={l} style={{ display:'flex', justifyContent:'space-between', fontSize:12 }}>
+                    <span style={{ color:'#aaa' }}>{l}</span>
+                    <span style={{ fontWeight:500, color:'#1a1a1a' }}>{v}</span>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
+
+      {/* Create / Edit Modal */}
+      <Dialog open={showModal} onClose={() => { setShowModal(false); resetForm(); }}>
+        <div className="adm" style={{ maxWidth:520 }}>
+          <style>{ADMIN_STYLES}</style>
+          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:18 }}>
+            <div>
+              <p className="adm-modal-title">{editingPlan ? 'Edit Plan' : 'New Investment Plan'}</p>
+              <p className="adm-modal-sub">{editingPlan ? `Editing: ${editingPlan.name}` : 'Set up a plan visible to all users'}</p>
+            </div>
+            <button className="adm-icon-btn" onClick={() => { setShowModal(false); resetForm(); }}><X size={14} /></button>
+          </div>
+
+          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            <div className="adm-field-wrap">
+              <label className="adm-field-label">Plan Name *</label>
+              <input className="adm-field-input" value={form.name} onChange={set('name')} placeholder="e.g., Starter Plan" />
+            </div>
+            <div className="adm-field-wrap">
+              <label className="adm-field-label">Description *</label>
+              <textarea className="adm-field-textarea" value={form.description} onChange={set('description')} placeholder="Describe the investment plan…" />
+            </div>
+
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+              <div className="adm-field-wrap">
+                <label className="adm-field-label">Min Amount (USD) *</label>
+                <input className="adm-field-input" type="number" step="0.01" value={form.min_amount} onChange={set('min_amount')} placeholder="100" />
+              </div>
+              <div className="adm-field-wrap">
+                <label className="adm-field-label">Max Amount (USD)</label>
+                <input className="adm-field-input" type="number" step="0.01" value={form.max_amount} onChange={set('max_amount')} placeholder="Optional" />
+              </div>
+              <div className="adm-field-wrap">
+                <label className="adm-field-label">Expected Return (%) *</label>
+                <input className="adm-field-input" type="number" step="0.01" value={form.expected_return} onChange={set('expected_return')} placeholder="30" />
+              </div>
+              <div className="adm-field-wrap">
+                <label className="adm-field-label">Duration (Days) *</label>
+                <input className="adm-field-input" type="number" value={form.duration_days} onChange={set('duration_days')} placeholder="30" />
+              </div>
+            </div>
+
+            <label className="adm-check-row">
+              <input type="checkbox" checked={form.is_active} onChange={set('is_active')} />
+              Active (visible to users)
+            </label>
+          </div>
+
+          <div className="adm-modal-actions">
+            <button className="adm-btn-ghost" onClick={() => { setShowModal(false); resetForm(); }}>Cancel</button>
+            <button className="adm-btn-primary" onClick={handleSave}>{editingPlan ? 'Update Plan' : 'Create Plan'}</button>
+          </div>
+        </div>
+      </Dialog>
     </div>
   );
 }

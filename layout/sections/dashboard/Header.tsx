@@ -1,16 +1,20 @@
+// src/components/layout/Header.tsx
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bell, Search, X, CheckCircle, Clock, AlertCircle, Trash2 } from 'lucide-react';
-import { useAuthStore } from '@/libs/stores/auth.store';
-import { useTaskStore } from '@/libs/stores/task.store';
 import { useActivities } from '@/libs/hooks/useAuth';
 import { apiService } from '@/libs/services/api';
+import { ActivityLog } from '@/libs/types';
 
 type HeaderProps = {
   onMenuClick: () => void;
 };
+
+interface ActivityWithRead extends ActivityLog {
+  is_read?: boolean;
+}
 
 // Add this service function
 const authService = {
@@ -23,7 +27,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<ActivityLog[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [deletingActivityId, setDeletingActivityId] = useState<number | null>(null);
@@ -31,7 +35,6 @@ export function Header({ onMenuClick }: HeaderProps) {
   const searchRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  const { myTasks } = useTaskStore();
   const { activities, isLoading: activitiesLoading, mutate } = useActivities();
 
   // Close notif dropdown when clicking outside
@@ -61,7 +64,8 @@ export function Header({ onMenuClick }: HeaderProps) {
     try {
       // Search activities endpoint
       const res = await apiService.get(`/auth/my-activities/?search=${query}`);
-      setSearchResults(res.data || []);
+      const data = Array.isArray(res.data) ? res.data : [];
+      setSearchResults(data);
     } catch (error) {
       console.error('Search error:', error);
       setSearchResults([]);
@@ -112,22 +116,25 @@ export function Header({ onMenuClick }: HeaderProps) {
   };
 
   // Handle search result click
-  const handleSearchResultClick = (activity: any) => {
+  const handleSearchResultClick = (activity: ActivityLog) => {
     setSearchQuery('');
     setSearchOpen(false);
     setSearchResults([]);
     // Navigate to relevant page based on activity type
     if (activity.action?.toLowerCase().includes('task')) {
-      router.push(`/tasks`);
+      router.push('/tasks');
     } else if (activity.action?.toLowerCase().includes('profile')) {
-      router.push(`/profile`);
+      router.push('/profile');
+    } else if (activity.action?.toLowerCase().includes('investment')) {
+      router.push('/investments');
     } else {
-      router.push(`/dashboard`);
+      router.push('/dashboard');
     }
   };
 
-  const recentActivities = Array.isArray(activities) ? activities.slice(0, 8) : [];
-  const unreadCount = recentActivities.filter((a: any) => !a.is_read).length;
+  const activitiesArray = Array.isArray(activities) ? activities as ActivityWithRead[] : [];
+  const recentActivities = activitiesArray.slice(0, 8);
+  const unreadCount = recentActivities.filter((a) => !a.is_read).length;
 
   return (
     <header className="fixed top-0 left-0 md:left-64 right-0 z-20 bg-white border-b border-gray-100">
@@ -142,7 +149,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             <span className="text-lg">☰</span>
           </button>
 
-          {/* Search bar - Fixed duplicate button issue */}
+          {/* Search bar */}
           <div className="relative flex-1 max-w-sm">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
@@ -158,7 +165,6 @@ export function Header({ onMenuClick }: HeaderProps) {
                 placeholder="Search activities..."
                 className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400 transition-colors"
               />
-              {/* Only show X button when there's text - removed duplicate */}
               {searchQuery && (
                 <button
                   onClick={() => { 
@@ -173,11 +179,12 @@ export function Header({ onMenuClick }: HeaderProps) {
               )}
             </div>
 
-            {/* Search Results Dropdown - Now showing activities */}
+            {/* Search Results Dropdown */}
             {searchOpen && searchQuery.length >= 2 && (
               <div className="absolute top-full mt-2 left-0 right-0 bg-white border border-gray-100 rounded-2xl shadow-lg z-50 overflow-hidden">
                 {searchLoading ? (
                   <div className="px-4 py-6 text-center">
+                    <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
                     <p className="text-sm text-gray-400">Searching...</p>
                   </div>
                 ) : searchResults.length > 0 ? (
@@ -209,7 +216,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                   </ul>
                 ) : (
                   <div className="px-4 py-6 text-center">
-                    <p className="text-sm text-gray-400">No activities found for "{searchQuery}"</p>
+                    <p className="text-sm text-gray-400">No activities found for &quot;{searchQuery}&quot;</p>
                   </div>
                 )}
               </div>
@@ -225,7 +232,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           >
             <Bell className="h-5 w-5 text-gray-600" />
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-orange-500 rounded-full flex items-center justify-center">
+              <span className="absolute top-1 right-1 min-w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
                 <span className="text-[10px] text-white font-bold px-0.5">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
@@ -244,6 +251,7 @@ export function Header({ onMenuClick }: HeaderProps) {
               <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
                 {activitiesLoading ? (
                   <div className="px-4 py-6 text-center">
+                    <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
                     <p className="text-sm text-gray-400">Loading...</p>
                   </div>
                 ) : recentActivities.length > 0 ? (
@@ -300,14 +308,8 @@ export function Header({ onMenuClick }: HeaderProps) {
 
 // ── Helpers ──────────────────────────────────────────────
 
-function StatusIcon({ status }: { status: string }) {
-  if (status === 'completed') return <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />;
-  if (status === 'in_progress') return <Clock className="w-4 h-4 text-blue-500 shrink-0" />;
-  return <AlertCircle className="w-4 h-4 text-yellow-500 shrink-0" />;
-}
-
 function ActivityIcon({ action }: { action: string }) {
-  const a = action.toLowerCase();
+  const a = action?.toLowerCase() || '';
   if (a.includes('login'))     return <CheckCircle className="w-4 h-4 text-green-500" />;
   if (a.includes('task'))      return <CheckCircle className="w-4 h-4 text-orange-500" />;
   if (a.includes('invest'))    return <CheckCircle className="w-4 h-4 text-blue-500" />;

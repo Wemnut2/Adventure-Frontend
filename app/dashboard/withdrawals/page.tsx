@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { MainLayout } from '@/layout/sections/dashboard/MainLayout';
 import { useAuthStore } from '@/libs/stores/auth.store';
 import { useInvestmentStore } from '@/libs/stores/investment.store';
 import { openWhatsApp, openTelegram } from '@/libs/utils/whatsapp';
@@ -10,6 +9,7 @@ import { formatCurrency } from '@/libs/utils/format';
 import { Wallet, Banknote, Bitcoin, AlertCircle, CheckCircle, Clock, X, ChevronRight, DollarSign, Info } from 'lucide-react';
 import { investmentService } from '@/libs/services/investment.service';
 import { DASH_STYLES } from '@/app/styles/dashboardStyles';
+import { InvestmentTransaction , UserInvestment } from '@/libs/types';
 
 type Method = 'bank' | 'btc' | 'eth' | 'usdt';
 
@@ -23,6 +23,7 @@ const METHODS: { id: Method; label: string; icon: React.ElementType; userField: 
 const MIN_WITHDRAWAL = 500;
 const FEE_RATE       = 0.05;
 
+
 function WaIcon() {
   return <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.33 4.94L2.05 22l5.32-1.4c1.46.8 3.11 1.22 4.81 1.22 5.46 0 9.91-4.45 9.91-9.91 0-5.46-4.45-9.91-9.91-9.91z"/></svg>;
 }
@@ -32,7 +33,7 @@ function TgIcon() {
 
 export default function WithdrawalsPage() {
   const { user, updateAccountInfo } = useAuthStore();
-  const { investments, transactions, fetchTransactions } = useInvestmentStore();
+  const { userInvestments, transactions, fetchTransactions } = useInvestmentStore();
 
   const [selectedMethod, setSelectedMethod] = useState<Method>('bank');
   const [withdrawAmount, setWithdrawAmount] = useState('');
@@ -48,18 +49,29 @@ export default function WithdrawalsPage() {
     eth_wallet: user?.eth_wallet || '', usdt_wallet: user?.usdt_wallet || '',
   });
 
-  useEffect(() => { fetchTransactions(); }, []);
+  useEffect(() => { fetchTransactions(); }, [fetchTransactions]);
   useEffect(() => {
     if (user) {
       setPaymentInfo({ bank_name: user.bank_name || '', account_number: user.account_number || '', account_name: user.account_name || '', btc_wallet: user.btc_wallet || '', eth_wallet: user.eth_wallet || '', usdt_wallet: user.usdt_wallet || '' });
     }
   }, [user]);
 
-  const investmentsArr  = Array.isArray(investments)  ? investments  : [];
+  const investmentsArr  = Array.isArray(userInvestments)  ? userInvestments  : [];
   const transactionsArr = Array.isArray(transactions) ? transactions : [];
-  const totalBalance    = investmentsArr.filter(i => i.status === 'completed').reduce((s, i) => s + (i.amount || 0) + (i.total_profit || 0), 0);
-  const pendingW        = transactionsArr.filter(t => t.transaction_type === 'withdrawal' && t.status === 'pending').reduce((s, t) => s + (t.amount || 0), 0);
-  const completedW      = transactionsArr.filter(t => t.transaction_type === 'withdrawal' && t.status === 'completed').reduce((s, t) => s + (t.amount || 0), 0);
+  const totalBalance = investmentsArr
+      .filter((i: UserInvestment) => i.status === 'completed')
+      .reduce((sum: number, i: UserInvestment) => sum + (i.amount || 0) + (i.total_profit || 0), 0);
+  // Filter withdrawal transactions
+  const withdrawalTransactions = transactionsArr.filter(
+    (tx): tx is InvestmentTransaction => tx.transaction_type === 'withdrawal'
+  );
+ const pendingW = withdrawalTransactions
+    .filter((tx) => tx.status === 'pending')
+    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+  
+  const completedW = withdrawalTransactions
+    .filter((tx) => tx.status === 'completed')
+    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
   const availableBalance = Math.max(0, totalBalance - pendingW);
   const history          = transactionsArr.filter(t => t.transaction_type === 'withdrawal').slice(0, 10);
   const parsedAmount     = parseFloat(withdrawAmount) || 0;
@@ -105,21 +117,35 @@ export default function WithdrawalsPage() {
     finally { setSaving(false); }
   };
 
-  function txStatusIcon(status: string) {
-    if (status === 'completed')  return <CheckCircle size={14} color="#16a34a" />;
-    if (status === 'processing') return <Clock size={14} color="#0284c7" />;
-    if (status === 'pending')    return <Clock size={14} color="#d97706" />;
-    return <AlertCircle size={14} color="#dc2626" />;
-  }
-  function txStatusColor(status: string) {
-    if (status === 'completed')  return '#16a34a';
-    if (status === 'processing') return '#0284c7';
-    if (status === 'pending')    return '#d97706';
-    return '#dc2626';
-  }
+
+const getTxStatus = (status?: string): { label: string; color: string; icon: React.ReactElement } => {
+  const statusMap: Record<string, { label: string; color: string; icon: React.ReactElement }> = {
+    completed: { 
+      label: 'Completed', 
+      color: '#16a34a', 
+      icon: <CheckCircle size={14} color="#16a34a" /> 
+    },
+    processing: { 
+      label: 'Processing', 
+      color: '#0284c7', 
+      icon: <Clock size={14} color="#0284c7" /> 
+    },
+    pending: { 
+      label: 'Pending', 
+      color: '#d97706', 
+      icon: <Clock size={14} color="#d97706" /> 
+    },
+    failed: { 
+      label: 'Failed', 
+      color: '#dc2626', 
+      icon: <AlertCircle size={14} color="#dc2626" /> 
+    },
+  };
+  return statusMap[status || 'pending'] || statusMap.pending;
+};
 
   return (
-    <MainLayout>
+    <>
       <div className="ds ds-page ds-fade-up">
         <style>{DASH_STYLES}</style>
 
@@ -230,10 +256,12 @@ export default function WithdrawalsPage() {
         <div className="ds-card">
           <div className="ds-card-header"><p className="ds-card-title">Withdrawal History</p></div>
           {history.length > 0 ? (
-            history.map(tx => (
+            history.map(tx => {
+               const statusInfo = getTxStatus(tx.status);
+              return (
               <div key={tx.id} className="ds-list-item">
                 <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                  <div className="ds-list-icon">{txStatusIcon(tx.status)}</div>
+                  <div className="ds-list-icon">{statusInfo.icon}</div>
                   <div>
                     <p style={{ fontSize:12.5, fontWeight:500, color:'#1a1a1a' }}>Withdrawal</p>
                     <p style={{ fontSize:11, fontFamily:'monospace', color:'#bbb', marginTop:2 }}>{tx.reference}</p>
@@ -243,10 +271,11 @@ export default function WithdrawalsPage() {
                 <div style={{ textAlign:'right' }}>
                   <p style={{ fontSize:13, fontWeight:600, color:'#e05252' }}>−{formatCurrency(tx.amount)}</p>
                   <p style={{ fontSize:11, color:'#bbb' }}>Net: {formatCurrency(tx.amount * 0.95)}</p>
-                  <p style={{ fontSize:11, fontWeight:500, color: txStatusColor(tx.status), textTransform:'capitalize' }}>{tx.status}</p>
+                  <p style={{ fontSize:11, fontWeight:500, color: statusInfo.color, textTransform:'capitalize' }}>{statusInfo.label}</p>
                 </div>
               </div>
-            ))
+            );
+          })
           ) : (
             <div className="ds-empty">
               <div className="ds-empty-icon"><Wallet size={18} /></div>
@@ -319,6 +348,6 @@ export default function WithdrawalsPage() {
           </div>
         </div>
       )}
-    </MainLayout>
+    </>
   );
 }
