@@ -13,7 +13,6 @@ import {
   Award,
   BarChart3,
   Activity,
-  Bell,
   Settings,
   LogOut,
   ChevronLeft,
@@ -31,9 +30,9 @@ const menuItems = [
   { href: '/admin/transactions',        label: 'Transactions',      icon: CreditCard },
   { href: '/admin/challenges',          label: 'Challenges',        icon: Award },
   { href: '/admin/approvals',label: 'Approvals',         icon: TrendingUp },
-  { href: '/admin/analytics',           label: 'Analytics',         icon: BarChart3 },
+  // { href: '/admin/analytics',           label: 'Analytics',         icon: BarChart3 },
   { href: '/admin/activities',          label: 'Activities',        icon: Activity },
-  { href: '/admin/notifications',       label: 'Notifications',     icon: Bell },
+  // { href: '/admin/notifications',       label: 'Notifications',     icon: Bell },
   { href: '/admin/settings',            label: 'Settings',          icon: Settings },
 ];
 

@@ -2,159 +2,162 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card } from '@/layout/components/Card';
-import { Input } from '@/layout/components/Input';
-import { Button } from '@/layout/components/Button';
 import { adminService } from '@/libs/services/admin.service';
 import { formatDateTime } from '@/libs/utils/format';
+import { ADMIN_STYLES } from '../_style/adminPageStyles';
 import {
-  Search,
-  Download,
-  RefreshCw,
-  Activity,
-  User,
-  DollarSign,
-  CheckSquare,
-  Award,
-  AlertCircle,
-  Loader2
+  Search, Download, RefreshCw, Activity,
+  User, DollarSign, CheckSquare, Award, AlertCircle,
 } from 'lucide-react';
 
-interface Activity {
-  action: string;
-  user_email?: string;
-  details?: string;
-  created_at: string;
-  ip_address?: string;
+interface ActivityItem {
+  action: string; user_email?: string;
+  details?: string; created_at: string; ip_address?: string;
+}
+
+function Spinner() {
+  return (
+    <div className="adm-loader-page">
+      <div className="adm-loader-inner">
+        <svg className="adm-spinner" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.5">
+          <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+        </svg>
+        <p className="adm-loader-text">Loading activities…</p>
+      </div>
+    </div>
+  );
+}
+
+function activityIcon(action: string) {
+  if (action.includes('login'))      return <User       size={13} />;
+  if (action.includes('investment')) return <DollarSign size={13} />;
+  if (action.includes('task'))       return <CheckSquare size={13} />;
+  if (action.includes('challenge'))  return <Award      size={13} />;
+  return <Activity size={13} />;
 }
 
 export default function AdminActivitiesPage() {
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
+  const [activities, setActivities]   = useState<ActivityItem[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [searchTerm, setSearchTerm]   = useState('');
+  const [typeFilter, setTypeFilter]   = useState('all');
 
-  useEffect(() => {
-    fetchActivities();
-  }, []);
-
-  const fetchActivities = async () => {
+  const fetch = async () => {
     setLoading(true);
     try {
       const data = await adminService.getRecentActivities();
       setActivities(data);
-    } catch (error) {
-      console.error('Error fetching activities:', error);
-    } finally {
-      setLoading(false);
-    }
+    } catch { setActivities([]); }
+    finally { setLoading(false); }
   };
 
-  const getActivityIcon = (action: string) => {
-    if (action.includes('login')) return <User className="h-4 w-4 text-blue-500" />;
-    if (action.includes('investment')) return <DollarSign className="h-4 w-4 text-green-500" />;
-    if (action.includes('task')) return <CheckSquare className="h-4 w-4 text-purple-500" />;
-    if (action.includes('challenge')) return <Award className="h-4 w-4 text-orange-500" />;
-    return <Activity className="h-4 w-4 text-gray-500" />;
+  useEffect(() => { fetch(); }, []);
+
+  const handleExport = () => {
+    if (!activities.length) return;
+    const headers = ['Action', 'User', 'Details', 'IP', 'Date'];
+    const rows = activities.map(a => [a.action, a.user_email || 'System', a.details || '', a.ip_address || '', a.created_at]);
+    const csv = [headers, ...rows].map(r => r.map(v => JSON.stringify(v)).join(',')).join('\n');
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv], { type:'text/csv' })), download: `activities_${new Date().toISOString().slice(0,10)}.csv` });
+    a.click();
   };
 
-  const filteredActivities = activities.filter((activity: Activity) =>
-    activity.action?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    activity.user_email?.toLowerCase().includes(searchTerm.toLowerCase())
+  const typeMatch = (action: string) => {
+    if (typeFilter === 'all')        return true;
+    if (typeFilter === 'auth')       return action.includes('login') || action.includes('logout');
+    if (typeFilter === 'investment') return action.includes('investment');
+    if (typeFilter === 'task')       return action.includes('task');
+    if (typeFilter === 'challenge')  return action.includes('challenge');
+    return true;
+  };
+
+  const filtered = activities.filter(a =>
+    (a.action?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     a.user_email?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    typeMatch(a.action)
   );
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Loader2 className="h-12 w-12 animate-spin text-orange-500" />
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="adm adm-root">
+      <style>{ADMIN_STYLES}</style>
+
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
         <div>
-          <h1 className="text-3xl font-bold gradient-text">Activity Log</h1>
-          <p className="mt-1 text-gray-600">Track all user and system activities</p>
+          <h1 className="adm-title">Activity Log</h1>
+          <p className="adm-subtitle">Track all user and system activities · {activities.length} total</p>
         </div>
-        <Button variant="outline" onClick={fetchActivities} className="gap-2">
-          <RefreshCw className="h-4 w-4" />
-          Refresh
-        </Button>
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+          <button className="adm-btn-ghost" onClick={fetch}><RefreshCw size={13} /> Refresh</button>
+          <button className="adm-btn-ghost" onClick={handleExport}><Download size={13} /> Export</button>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row">
-        <div className="flex-1">
-          <Input
-            placeholder="Search activities..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            icon={<Search className="h-4 w-4" />}
-          />
+      {/* Filters */}
+      <div className="adm-toolbar">
+        <div className="adm-search-wrap">
+          <Search size={13} color="#ccc" />
+          <input className="adm-search-input" placeholder="Search by action or user…"
+            value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="rounded-lg border border-gray-300 px-4 py-2 focus:border-orange-500 focus:outline-none"
-        >
+        <select className="adm-select" value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
           <option value="all">All Activities</option>
           <option value="auth">Authentication</option>
           <option value="investment">Investments</option>
           <option value="task">Tasks</option>
           <option value="challenge">Challenges</option>
         </select>
-        <Button variant="outline" className="gap-2">
-          <Download className="h-4 w-4" />
-          Export
-        </Button>
       </div>
 
-      <Card className="overflow-hidden">
-        <div className="divide-y divide-gray-200">
-          {filteredActivities.length > 0 ? (
-            filteredActivities.map((activity: Activity, index: number) => (
-              <div key={index} className="p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex items-start gap-3">
-                  <div className="rounded-full bg-gray-100 p-2">
-                    {getActivityIcon(activity.action)}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="font-medium">{activity.action}</p>
-                        {activity.details && (
-                          <p className="text-sm text-gray-500">{activity.details}</p>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-400">
-                        {formatDateTime(activity.created_at)}
-                      </p>
-                    </div>
-                    <div className="mt-2 flex items-center gap-3 text-xs text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        {activity.user_email || 'System'}
+      {/* Content */}
+      {loading ? <Spinner /> : filtered.length === 0 ? (
+        <div className="adm-table-card" style={{ padding:'48px 24px', textAlign:'center' }}>
+          <Activity size={28} color="#ddd" style={{ marginBottom:12 }} />
+          <p style={{ fontSize:12.5, color:'#bbb' }}>No activities found</p>
+        </div>
+      ) : (
+        <div className="adm-table-card">
+          {filtered.map((a, i) => (
+            <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:12, padding:'14px 16px', borderBottom:'1px solid rgba(0,0,0,0.05)', transition:'background .12s' }}
+              onMouseEnter={e => (e.currentTarget.style.background='#fafafa')}
+              onMouseLeave={e => (e.currentTarget.style.background='transparent')}
+            >
+              {/* Icon pill */}
+              <div style={{ width:30, height:30, borderRadius:8, background:'#f5f5f5', color:'#aaa', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:2 }}>
+                {activityIcon(a.action)}
+              </div>
+
+              {/* Body */}
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, flexWrap:'wrap' }}>
+                  <div style={{ minWidth:0 }}>
+                    <p style={{ fontSize:12.5, fontWeight:500, color:'#1a1a1a', marginBottom:3 }}>{a.action}</p>
+                    {a.details && <p style={{ fontSize:11.5, color:'#aaa', marginBottom:5 }}>{a.details}</p>}
+                    <div style={{ display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
+                      <span style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, color:'#bbb' }}>
+                        <User size={10} />{a.user_email || 'System'}
                       </span>
-                      {activity.ip_address && (
-                        <span className="flex items-center gap-1">
-                          <AlertCircle className="h-3 w-3" />
-                          IP: {activity.ip_address}
+                      {a.ip_address && (
+                        <span style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, color:'#ccc' }}>
+                          <AlertCircle size={10} />IP: {a.ip_address}
                         </span>
                       )}
                     </div>
                   </div>
+                  <p style={{ fontSize:11, color:'#ccc', flexShrink:0, whiteSpace:'nowrap' }}>
+                    {formatDateTime(a.created_at)}
+                  </p>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="py-12 text-center">
-              <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No activities found</p>
             </div>
-          )}
+          ))}
+
+          {/* Footer count */}
+          <div className="adm-table-footer" style={{ padding:'10px 16px', borderTop:'1px solid rgba(0,0,0,0.06)', background:'#fafafa' }}>
+            <p style={{ fontSize:11.5, color:'#bbb' }}>Showing {filtered.length} of {activities.length} activities</p>
+          </div>
         </div>
-      </Card>
+      )}
     </div>
   );
 }
