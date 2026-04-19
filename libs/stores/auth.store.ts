@@ -1,7 +1,7 @@
 // src/stores/auth.store.ts
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { User, ActivityLog } from '@/libs/types';
+import { User, ActivityLog, RegisterData } from '@/libs/types';
 import { authService } from '@/libs/services/auth.service';
 import { setTokens, removeTokens, getAccessToken } from '@/libs/utils/auth';
 
@@ -11,7 +11,7 @@ interface AuthState {
   isLoading: boolean;
   activities: ActivityLog[];
   login: (email: string, password: string) => Promise<void>;
-  register: (data: any) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
   updateUser: (data: Partial<User>) => Promise<void>;
@@ -34,17 +34,19 @@ export const useAuthStore = create<AuthState>()(
           setTokens(response.access, response.refresh);
           set({ user: response.user, isAuthenticated: true, isLoading: false });
         } catch (error) {
+          console.error('Login error:', error);
           set({ isLoading: false });
           throw error;
         }
       },
 
-      register: async (data: any) => {
+      register: async (data: RegisterData) => {
         set({ isLoading: true });
         try {
           await authService.register(data);
           set({ isLoading: false });
         } catch (error) {
+          console.error('Registration error:', error);
           set({ isLoading: false });
           throw error;
         }
@@ -68,7 +70,7 @@ export const useAuthStore = create<AuthState>()(
       loadUser: async () => {
         const token = getAccessToken();
         if (!token) {
-          set({ isAuthenticated: false, user: null });
+          set({ isAuthenticated: false, user: null, isLoading: false });
           return;
         }
 
@@ -76,7 +78,8 @@ export const useAuthStore = create<AuthState>()(
         try {
           const user = await authService.getProfile();
           set({ user, isAuthenticated: true, isLoading: false });
-        } catch  {
+        } catch (error) {
+          console.error('Load user error:', error);
           removeTokens();
           set({ user: null, isAuthenticated: false, isLoading: false });
         }
@@ -88,6 +91,7 @@ export const useAuthStore = create<AuthState>()(
           const updatedUser = await authService.updateProfile(data);
           set({ user: updatedUser, isLoading: false });
         } catch (error) {
+          console.error('Update user error:', error);
           set({ isLoading: false });
           throw error;
         }
@@ -99,6 +103,7 @@ export const useAuthStore = create<AuthState>()(
           const updatedUser = await authService.updateAccountInfo(data);
           set({ user: updatedUser, isLoading: false });
         } catch (error) {
+          console.error('Update account info error:', error);
           set({ isLoading: false });
           throw error;
         }
@@ -110,6 +115,7 @@ export const useAuthStore = create<AuthState>()(
           const activities = await authService.getMyActivities();
           set({ activities, isLoading: false });
         } catch (error) {
+          console.error('Fetch activities error:', error);
           set({ isLoading: false });
           throw error;
         }

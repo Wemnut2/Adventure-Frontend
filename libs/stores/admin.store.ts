@@ -1,12 +1,6 @@
+// src/libs/stores/admin.store.ts - Make sure these methods exist
 import { create } from 'zustand';
-import {
-  User,
-  Investment,
-  Task,
-  Transaction,
-  DashboardStats
-} from '@/libs/types';
-
+import { User, Investment, Task, Transaction, DashboardStats } from '@/libs/types';
 import { adminService } from '@/libs/services/admin.service';
 
 interface AdminState {
@@ -15,28 +9,23 @@ interface AdminState {
   investments: Investment[];
   tasks: Task[];
   transactions: Transaction[];
-
-  loading: {
-    stats: boolean;
-    users: boolean;
-    investments: boolean;
-    tasks: boolean;
-    transactions: boolean;
-  };
-
-  // fetchers
+  isLoading: boolean;
+  error: string | null;
+  
+  // Fetch methods
   fetchStats: () => Promise<void>;
   fetchUsers: () => Promise<void>;
   fetchInvestments: () => Promise<void>;
   fetchTasks: () => Promise<void>;
   fetchTransactions: () => Promise<void>;
-
-  // actions
+  
+  // Action methods
   approveInvestment: (id: number) => Promise<void>;
   approveTransaction: (id: number, notes?: string) => Promise<void>;
   toggleUserSubscription: (id: number) => Promise<void>;
   updateUserRole: (id: number, role: string) => Promise<void>;
   createTask: (data: Partial<Task>) => Promise<void>;
+  deleteTask: (id: number) => Promise<void>;
 }
 
 export const useAdminStore = create<AdminState>((set, get) => ({
@@ -45,125 +34,134 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   investments: [],
   tasks: [],
   transactions: [],
+  isLoading: false,
+  error: null,
 
-  loading: {
-    stats: false,
-    users: false,
-    investments: false,
-    tasks: false,
-    transactions: false,
-  },
-
-  /* ======================
-     STATS
-  ====================== */
   fetchStats: async () => {
-    set((s) => ({ loading: { ...s.loading, stats: true } }));
+    set({ isLoading: true, error: null });
     try {
       const stats = await adminService.getDashboardStats();
-      set((s) => ({
-        stats,
-        loading: { ...s.loading, stats: false },
-      }));
-    } catch (err) {
-      set((s) => ({ loading: { ...s.loading, stats: false } }));
-      throw err;
+      set({ stats, isLoading: false });
+    } catch (error) {
+      set({ error: (error as Error).message, isLoading: false });
     }
   },
 
-  /* ======================
-     USERS
-  ====================== */
   fetchUsers: async () => {
-    set((s) => ({ loading: { ...s.loading, users: true } }));
+    set({ isLoading: true, error: null });
     try {
       const users = await adminService.getAllUsers();
-      set((s) => ({
-        users,
-        loading: { ...s.loading, users: false },
-      }));
-    } catch (err) {
-      set((s) => ({ loading: { ...s.loading, users: false } }));
-      throw err;
+      set({ users, isLoading: false });
+    } catch (error) {
+      set({ error: (error as Error).message, isLoading: false });
     }
   },
 
-  /* ======================
-     INVESTMENTS
-  ====================== */
   fetchInvestments: async () => {
-    set((s) => ({ loading: { ...s.loading, investments: true } }));
+    set({ isLoading: true, error: null });
     try {
       const investments = await adminService.getAllInvestments();
-      set((s) => ({
-        investments,
-        loading: { ...s.loading, investments: false },
-      }));
-    } catch (err) {
-      set((s) => ({ loading: { ...s.loading, investments: false } }));
-      throw err;
+      set({ investments, isLoading: false });
+    } catch (error) {
+      set({ error: (error as Error).message, isLoading: false });
     }
   },
 
-  /* ======================
-     TASKS
-  ====================== */
   fetchTasks: async () => {
-    set((s) => ({ loading: { ...s.loading, tasks: true } }));
+    set({ isLoading: true, error: null });
     try {
       const tasks = await adminService.getAllTasks();
-      set((s) => ({
-        tasks,
-        loading: { ...s.loading, tasks: false },
-      }));
-    } catch (err) {
-      set((s) => ({ loading: { ...s.loading, tasks: false } }));
-      throw err;
+      set({ tasks, isLoading: false });
+    } catch (error) {
+      set({ error: (error as Error).message, isLoading: false });
     }
   },
 
-  /* ======================
-     TRANSACTIONS
-  ====================== */
   fetchTransactions: async () => {
-    set((s) => ({ loading: { ...s.loading, transactions: true } }));
+    set({ isLoading: true, error: null });
     try {
       const transactions = await adminService.getAllTransactions();
-      set((s) => ({
-        transactions,
-        loading: { ...s.loading, transactions: false },
-      }));
-    } catch (err) {
-      set((s) => ({ loading: { ...s.loading, transactions: false } }));
-      throw err;
+      set({ transactions, isLoading: false });
+    } catch (error) {
+      set({ error: (error as Error).message, isLoading: false });
     }
   },
 
-  /* ======================
-     ACTIONS
-  ====================== */
-  approveInvestment: async (id) => {
-    await adminService.approveInvestment(id);
-    await get().fetchInvestments();
+  approveInvestment: async (id: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      await adminService.approveInvestment(id);
+      await get().fetchInvestments();
+    } catch (error) {
+      set({ error: (error as Error).message, isLoading: false });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
-  approveTransaction: async (id, notes) => {
-    await adminService.approveTransaction(id, notes);
-    await get().fetchTransactions();
+  approveTransaction: async (id: number, notes?: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      await adminService.approveTransaction(id, notes);
+      await get().fetchTransactions();
+    } catch (error) {
+      set({ error: (error as Error).message, isLoading: false });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
-  toggleUserSubscription: async (id) => {
-    await adminService.toggleUserSubscription(id);
-    await get().fetchUsers();
+  toggleUserSubscription: async (id: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      await adminService.toggleUserSubscription(id);
+      await get().fetchUsers();
+    } catch (error) {
+      set({ error: (error as Error).message, isLoading: false });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
-  updateUserRole: async (id, role) => {
-    await adminService.updateUserRole(id, role);
-    await get().fetchUsers();
+  updateUserRole: async (id: number, role: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      await adminService.updateUserRole(id, role);
+      await get().fetchUsers();
+    } catch (error) {
+      set({ error: (error as Error).message, isLoading: false });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
-  createTask: async (data) => {
-    await adminService.createTask(data);
-    await get().fetchTasks();
+  createTask: async (data: Partial<Task>) => {
+    set({ isLoading: true, error: null });
+    try {
+      await adminService.createTask(data);
+      await get().fetchTasks();
+    } catch (error) {
+      set({ error: (error as Error).message, isLoading: false });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  deleteTask: async (id: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      await adminService.deleteTask(id);
+      await get().fetchTasks();
+    } catch (error) {
+      set({ error: (error as Error).message, isLoading: false });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
   },
 }));

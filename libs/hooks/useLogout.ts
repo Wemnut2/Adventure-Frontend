@@ -13,7 +13,7 @@ export function useLogout() {
       await logout();
       showToast('Logged out successfully', 'success');
       router.push('/login');
-    } catch (error) {
+    } catch {
       showToast('Failed to logout', 'error');
     }
   };
