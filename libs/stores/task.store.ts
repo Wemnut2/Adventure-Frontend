@@ -14,7 +14,7 @@ interface TaskState {
   completeTask: (userTaskId: number, file: File) => Promise<void>;
 }
 
-export const useTaskStore = create<TaskState>((set, get) => ({
+export const useTaskStore = create<TaskState>((set) => ({
   availableTasks: [],
   myTasks: [],
   isLoading: false,

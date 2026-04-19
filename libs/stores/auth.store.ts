@@ -21,7 +21,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       isAuthenticated: false,
       isLoading: false,
@@ -76,7 +76,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const user = await authService.getProfile();
           set({ user, isAuthenticated: true, isLoading: false });
-        } catch (error) {
+        } catch  {
           removeTokens();
           set({ user: null, isAuthenticated: false, isLoading: false });
         }
