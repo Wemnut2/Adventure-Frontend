@@ -1,16 +1,18 @@
-// src/app/admin/user-investments/page.tsx
+// src/app/admin/user-investments/page.tsx (updated with video upload)
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Dialog } from '@/layout/components/Dialog';
 import { adminService } from '@/libs/services/admin.service';
 import { useToast } from '@/libs/src/contexts/ToastContext';
 import { formatCurrency, formatDate } from '@/libs/utils/format';
-import { ADMIN_STYLES } from '../_style/adminPageStyles'; // ← fixed path
+import { ADMIN_STYLES } from '../_style/adminPageStyles';
 import {
   Search, Eye, CheckCircle, XCircle, Award,
   RefreshCw, Send, X, Plus, Medal, Star, Crown,
+  Upload, Link as LinkIcon, Trash2, Play
 } from 'lucide-react';
+import Image from 'next/image';
 
 /* ─── Types ── */
 interface Investment {
@@ -23,6 +25,8 @@ interface Investment {
 
 interface TaskFormData {
   title: string; description: string;
+  video_file: File | null;
+  video_url: string;
   bronze_price: string; silver_price: string; gold_price: string;
   bronze_reward: string; silver_reward: string; gold_reward: string;
   requires_subscription: boolean; is_active: boolean;
@@ -30,6 +34,7 @@ interface TaskFormData {
 
 const EMPTY_TASK: TaskFormData = {
   title: '', description: '',
+  video_file: null, video_url: '',
   bronze_price: '', silver_price: '', gold_price: '',
   bronze_reward: '', silver_reward: '', gold_reward: '',
   requires_subscription: false, is_active: true,
@@ -68,6 +73,73 @@ const TIERS = [
   { key: 'gold',   label: 'Gold',   icon: <Crown size={11} /> },
 ] as const;
 
+// Video Preview Component
+function VideoPreview({ src, title, onRemove }: { src: string; title: string; onRemove?: () => void }) {
+  const [showVideo, setShowVideo] = useState(false);
+  const isYouTube = src.includes('youtube.com') || src.includes('youtu.be');
+  const isVimeo = src.includes('vimeo.com');
+  
+  const getEmbedUrl = () => {
+    if (isYouTube) {
+      const match = src.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
+      return match ? `https://www.youtube.com/embed/${match[1]}` : src;
+    }
+    if (isVimeo) {
+      const match = src.match(/vimeo\.com\/(\d+)/);
+      return match ? `https://player.vimeo.com/video/${match[1]}` : src;
+    }
+    return src;
+  };
+  
+  return (
+    <>
+      <div className="adm-video-preview" onClick={() => setShowVideo(true)}>
+        {isYouTube || isVimeo ? (
+          <Image 
+            src={`https://img.youtube.com/vi/${src.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/)?.[1]}/hqdefault.jpg`}
+            alt={title}
+            className="adm-video-thumb"
+          />
+        ) : (
+          <video src={src} className="adm-video-thumb" preload="metadata" />
+        )}
+        <div className="adm-play-overlay">
+          <div className="adm-play-button"><Play size={16} /></div>
+        </div>
+        {onRemove && (
+          <button className="adm-video-remove" onClick={(e) => { e.stopPropagation(); onRemove(); }}>
+            <Trash2 size={12} />
+          </button>
+        )}
+      </div>
+      
+      {showVideo && (
+        <div className="adm-modal-overlay" onClick={() => setShowVideo(false)}>
+          <div className="adm-video-modal" onClick={e => e.stopPropagation()}>
+            <button className="adm-close-btn" onClick={() => setShowVideo(false)}>×</button>
+            {isYouTube || isVimeo ? (
+              <iframe
+                src={getEmbedUrl()}
+                className="adm-video-iframe"
+                allowFullScreen
+                title={title}
+              />
+            ) : (
+              <video
+                src={src}
+                controls
+                autoPlay
+                className="adm-video-iframe"
+                title={title}
+              />
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 /* ─── Page ── */
 export default function AdminUserInvestmentsPage() {
   const [investments, setInvestments]   = useState<Investment[]>([]);
@@ -85,6 +157,8 @@ export default function AdminUserInvestmentsPage() {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [taskForm, setTaskForm]           = useState<TaskFormData>(EMPTY_TASK);
   const [creatingTask, setCreatingTask]   = useState(false);
+  const [videoPreview, setVideoPreview]   = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { showToast } = useToast();
 
@@ -118,35 +192,68 @@ export default function AdminUserInvestmentsPage() {
     catch { showToast('Failed', 'error'); }
   };
 
-  /* ─── Task creation ── */
+  /* ─── Task creation with video ── */
   const setField = (k: keyof TaskFormData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setTaskForm(p => ({ ...p, [k]: e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value }));
+
+  const handleVideoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    if (file) {
+      setTaskForm(p => ({ ...p, video_file: file, video_url: '' }));
+      const previewUrl = URL.createObjectURL(file);
+      setVideoPreview(previewUrl);
+    }
+  };
+
+  const handleVideoUrlChange = (url: string) => {
+    setTaskForm(p => ({ ...p, video_url: url, video_file: null }));
+    setVideoPreview(url);
+  };
+
+  const clearVideo = () => {
+    setTaskForm(p => ({ ...p, video_file: null, video_url: '' }));
+    setVideoPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const handleCreateTask = async () => {
     if (!taskForm.title.trim())       { showToast('Task title is required', 'error'); return; }
     if (!taskForm.description.trim()) { showToast('Description is required', 'error'); return; }
     setCreatingTask(true);
     try {
-      await adminService.createTask({
-        title:       taskForm.title,
-        description: taskForm.description,
-        bronze_price:  parseFloat(taskForm.bronze_price)  || 0,
-        silver_price:  parseFloat(taskForm.silver_price)  || 0,
-        gold_price:    parseFloat(taskForm.gold_price)    || 0,
-        bronze_reward: parseFloat(taskForm.bronze_reward) || 0,
-        silver_reward: parseFloat(taskForm.silver_reward) || 0,
-        gold_reward:   parseFloat(taskForm.gold_reward)   || 0,
-        requires_subscription: taskForm.requires_subscription,
-        is_active:     taskForm.is_active,
-      });
+      const formData = new FormData();
+      formData.append('title', taskForm.title);
+      formData.append('description', taskForm.description);
+      if (taskForm.video_file) {
+        formData.append('video', taskForm.video_file);
+      }
+      if (taskForm.video_url) {
+        formData.append('video_url', taskForm.video_url);
+      }
+      formData.append('bronze_price', taskForm.bronze_price);
+      formData.append('silver_price', taskForm.silver_price);
+      formData.append('gold_price', taskForm.gold_price);
+      formData.append('bronze_reward', taskForm.bronze_reward);
+      formData.append('silver_reward', taskForm.silver_reward);
+      formData.append('gold_reward', taskForm.gold_reward);
+      formData.append('requires_subscription', String(taskForm.requires_subscription));
+      formData.append('is_active', String(taskForm.is_active));
+      
+      await adminService.createTaskWithFile(formData);
       showToast('Task created successfully!', 'success');
-      setShowTaskModal(false); setTaskForm(EMPTY_TASK);
+      setShowTaskModal(false); 
+      setTaskForm(EMPTY_TASK);
+      setVideoPreview(null);
     } catch { showToast('Failed to create task', 'error'); }
     finally { setCreatingTask(false); }
   };
 
-  const closeTaskModal = () => { setShowTaskModal(false); setTaskForm(EMPTY_TASK); };
+  const closeTaskModal = () => { 
+    setShowTaskModal(false); 
+    setTaskForm(EMPTY_TASK);
+    setVideoPreview(null);
+  };
 
   /* ─── Derived ── */
   const filtered = investments.filter(i =>
@@ -257,7 +364,7 @@ export default function AdminUserInvestmentsPage() {
                         <div style={{ display:'flex', gap:4 }}>
                           <button className="adm-icon-btn" onClick={() => { setSelectedInv(inv); setShowDetails(true); }}>
                             <Eye size={14} />
-                          </button>
+          </button>
                           {inv.status === 'pending' && (
                             <>
                               <button className="adm-icon-btn success" onClick={() => handleVerify(inv.id)}>
@@ -284,7 +391,7 @@ export default function AdminUserInvestmentsPage() {
         </>
       )}
 
-      {/* ── Investment Details Modal ── */}
+      {/* ── Investment Details Modal (keep as is) ── */}
       <Dialog open={showDetails} onClose={() => setShowDetails(false)}>
         {selectedInv && (
           <div className="adm" style={{ maxWidth:480 }}>
@@ -299,13 +406,13 @@ export default function AdminUserInvestmentsPage() {
             <div className="adm-detail-section">
               <div className="adm-detail-grid">
                 {[
-                  ['User',            selectedInv.user_email],
-                  ['Plan',            selectedInv.plan_name],
-                  ['Amount',          formatCurrency(selectedInv.amount)],
+                  ['User', selectedInv.user_email],
+                  ['Plan', selectedInv.plan_name],
+                  ['Amount', formatCurrency(selectedInv.amount)],
                   ['Expected Return', formatCurrency(selectedInv.expected_return_amount)],
-                  ['Invested On',     formatDate(selectedInv.created_at)],
+                  ['Invested On', formatDate(selectedInv.created_at)],
                   ...(selectedInv.start_date ? [['Start Date', formatDate(selectedInv.start_date)]] : []),
-                  ...(selectedInv.end_date   ? [['End Date',   formatDate(selectedInv.end_date)]]   : []),
+                  ...(selectedInv.end_date ? [['End Date', formatDate(selectedInv.end_date)]] : []),
                 ].map(([l, v]) => (
                   <div key={String(l)}>
                     <p className="adm-detail-label">{l}</p>
@@ -330,7 +437,7 @@ export default function AdminUserInvestmentsPage() {
         )}
       </Dialog>
 
-      {/* ── Reject Modal ── */}
+      {/* ── Reject Modal (keep as is) ── */}
       <Dialog open={showReject} onClose={() => setShowReject(false)}>
         <div className="adm" style={{ maxWidth:420 }}>
           <style>{ADMIN_STYLES}</style>
@@ -347,7 +454,7 @@ export default function AdminUserInvestmentsPage() {
         </div>
       </Dialog>
 
-      {/* ── Create Task Modal ── */}
+      {/* ── Create Task Modal with Video Upload ── */}
       <Dialog open={showTaskModal} onClose={closeTaskModal}>
         <div className="adm" style={{ maxWidth:560, maxHeight:'85vh', overflowY:'auto' }}>
           <style>{ADMIN_STYLES}</style>
@@ -368,6 +475,46 @@ export default function AdminUserInvestmentsPage() {
             <div className="adm-field-wrap">
               <label className="adm-field-label">Description *</label>
               <textarea className="adm-field-textarea" rows={3} value={taskForm.description} onChange={setField('description')} placeholder="Describe what users need to do…" />
+            </div>
+
+            {/* Video Upload Section */}
+            <div className="adm-field-wrap">
+              <label className="adm-field-label">Task Video (Optional)</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <LinkIcon size={14} color="#888" />
+                    <span style={{ fontSize: 11, color: '#888' }}>YouTube / Vimeo URL</span>
+                  </div>
+                  <input 
+                    className="adm-field-input" 
+                    value={taskForm.video_url} 
+                    onChange={(e) => handleVideoUrlChange(e.target.value)}
+                    placeholder="https://www.youtube.com/watch?v=..." 
+                  />
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <Upload size={14} color="#888" />
+                    <span style={{ fontSize: 11, color: '#888' }}>Or upload video file (MP4, WebM)</span>
+                  </div>
+                  <input 
+                    ref={fileInputRef}
+                    type="file" 
+                    accept="video/*"
+                    onChange={handleVideoFileChange}
+                    className="adm-field-input" 
+                    style={{ padding: '6px' }}
+                  />
+                </div>
+
+                {/* Video Preview */}
+                {videoPreview && (
+                  <div style={{ marginTop: 8 }}>
+                    <VideoPreview src={videoPreview} title={taskForm.title || 'Video preview'} onRemove={clearVideo} />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="adm-divider" />

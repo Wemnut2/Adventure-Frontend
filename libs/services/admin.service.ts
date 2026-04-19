@@ -387,6 +387,8 @@ class AdminService {
     return response.data;
   }
 
+
+
   // Task Management
   async getAllTasks(): Promise<Task[]> {
     try {
@@ -412,19 +414,41 @@ class AdminService {
     }
   }
 
+  // Regular create task (without file)
   async createTask(data: Partial<Task>): Promise<Task> {
-    // Use the standard REST endpoint, not /create_task/
-    const response = await apiService.post<Task>('/admin/tasks/', {
+    const payload = {
       title: data.title,
       description: data.description,
-      bronze_price: data.bronze_price,
-      silver_price: data.silver_price,
-      gold_price: data.gold_price,
-      bronze_reward: data.bronze_reward,
-      silver_reward: data.silver_reward,
-      gold_reward: data.gold_reward,
+      bronze_price: data.bronze_price || '0',
+      silver_price: data.silver_price || '0',
+      gold_price: data.gold_price || '0',
+      bronze_reward: data.bronze_reward || '0',
+      silver_reward: data.silver_reward || '0',
+      gold_reward: data.gold_reward || '0',
       requires_subscription: data.requires_subscription || false,
       is_active: data.is_active !== undefined ? data.is_active : true,
+    };
+    
+    const response = await apiService.post<Task>('/admin/tasks/', payload);
+    return response.data;
+  }
+
+  // NEW: Create task with file upload (for videos)
+  async createTaskWithFile(formData: FormData): Promise<Task> {
+    const response = await apiService.post<Task>('/admin/tasks/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
+
+  // Update task with file upload
+  async updateTaskWithFile(id: number, formData: FormData): Promise<Task> {
+    const response = await apiService.put<Task>(`/admin/tasks/${id}/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     });
     return response.data;
   }

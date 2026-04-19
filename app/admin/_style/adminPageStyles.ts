@@ -56,6 +56,189 @@ export const ADMIN_STYLES = `
   }
   .adm-select:focus { border-color: rgba(0,0,0,0.22); }
 
+  /* Video styles for admin panel */
+.adm-video-preview {
+  position: relative;
+  width: 100%;
+  max-width: 200px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.adm-video-thumb {
+  width: 100%;
+  height: auto;
+  max-height: 120px;
+  object-fit: cover;
+}
+
+.adm-play-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.adm-video-preview:hover .adm-play-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.adm-play-button {
+  width: 40px;
+  height: 40px;
+  background: rgba(249, 115, 22, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: transform 0.2s;
+}
+
+.adm-video-preview:hover .adm-play-button {
+  transform: scale(1.1);
+}
+
+.adm-video-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.adm-video-remove:hover {
+  background: #ef4444;
+}
+
+/* Video modal */
+.adm-video-modal {
+  position: relative;
+  width: 90%;
+  max-width: 800px;
+  height: 450px;
+  background: black;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.adm-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.adm-close-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.adm-video-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* User dashboard video styles */
+.ds-video-thumb {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+
+.ds-video-thumb-img {
+  width: 100%;
+  border-radius: 8px;
+  max-height: 200px;
+  object-fit: cover;
+}
+
+.ds-play-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.ds-video-thumb:hover .ds-play-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.ds-play-button {
+  width: 50px;
+  height: 50px;
+  background: rgba(249, 115, 22, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
+  transition: transform 0.2s;
+}
+
+.ds-video-thumb:hover .ds-play-button {
+  transform: scale(1.1);
+}
+
+.ds-video-modal {
+  position: relative;
+  width: 90%;
+  max-width: 800px;
+  height: 450px;
+  background: black;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.ds-video-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+@media (max-width: 768px) {
+  .ds-video-modal {
+    height: 250px;
+  }
+  .adm-video-modal {
+    height: 250px;
+  }
+}
   /* Table card */
   .adm-table-card {
     background: #fff; border: 1px solid rgba(0,0,0,0.07);

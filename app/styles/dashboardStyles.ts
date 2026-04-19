@@ -291,6 +291,113 @@ export const DASH_STYLES = `
     font-size: 11.5px; font-weight: 500; color: #555;
   }
 
+
+  /* Add to DASH_STYLES */
+.ds-video-thumb {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #f5f5f5;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ds-video-thumb-img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.ds-video-placeholder {
+  width: 100%;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a1a1a, #333);
+  color: white;
+}
+
+.ds-play-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.ds-video-thumb:hover .ds-play-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.ds-play-button {
+  width: 50px;
+  height: 50px;
+  background: rgba(249, 115, 22, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
+  transition: transform 0.2s;
+}
+
+.ds-video-thumb:hover .ds-play-button {
+  transform: scale(1.1);
+}
+
+.ds-video-modal {
+  position: relative;
+  width: 90%;
+  max-width: 800px;
+  height: 450px;
+  background: black;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.ds-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ds-close-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.ds-video-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+@media (max-width: 768px) {
+  .ds-video-modal {
+    height: 250px;
+  }
+}
   /* ── List item ── */
   .ds-list-item {
     display: flex; align-items: center; justify-content: space-between;
