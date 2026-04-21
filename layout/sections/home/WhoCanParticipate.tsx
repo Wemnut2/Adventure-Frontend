@@ -119,7 +119,7 @@ export default function WhoCanParticipate() {
             Are You Eligible?
           </h2>
           <p className="text-gray-500 text-lg">
-            We're looking for mentally strong individuals ready to push their limits
+            We&apos;re looking for mentally strong individuals ready to push their limits
           </p>
         </div>
 

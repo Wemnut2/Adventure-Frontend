@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useDashboard } from './DashboardProvider';
 import {
   openWhatsApp, 
@@ -9,6 +9,12 @@ import {
   openTelegramSecondary,
   whatsAppMessages,
 } from '@/libs/utils/whatsapp';
+import { Eye } from 'lucide-react';
+
+// Fee constants
+const REGISTRATION_FEE = 500;
+const INSURANCE_FEE = 100;
+const TOTAL_FEE = REGISTRATION_FEE + INSURANCE_FEE;
 
 /* ─── Shared styles ─────────────────────────────────────────────────────── */
 const STYLES = `
@@ -48,6 +54,32 @@ const STYLES = `
     font-size: 12.5px; color: #aaa;
     text-align: center; line-height: 1.65;
     margin-bottom: 22px;
+  }
+
+  /* View Fee Button */
+  .view-fee-btn {
+    width: 100%;
+    padding: 13px;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    border: none;
+    border-radius: 11px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.15s, transform 0.15s;
+    font-family: 'DM Sans', sans-serif;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(249,115,22,0.2);
+  }
+
+  .view-fee-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
   }
 
   /* Features list */
@@ -97,6 +129,169 @@ const STYLES = `
   }
 
   .contact-btn-arrow { margin-left: auto; color: #ccc; font-size: 16px; line-height: 1; }
+
+  /* Modal Styles */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.15s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .modal-card {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.14);
+    max-width: 400px; width: 100%;
+    padding: 28px 24px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.18s ease;
+  }
+
+  @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .modal-icon-wrap {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 14px; color: #fff;
+  }
+
+  .modal-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px; color: #1a1a1a;
+    text-align: center; margin-bottom: 6px;
+    letter-spacing: -0.01em;
+  }
+
+  .modal-sub {
+    font-size: 12px; color: #aaa;
+    text-align: center; margin-bottom: 20px;
+  }
+
+  /* Fee Breakdown in Modal */
+  .fee-breakdown {
+    background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(0,0,0,0.06);
+  }
+
+  .fee-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .fee-item:last-of-type {
+    margin-bottom: 0;
+  }
+
+  .fee-item-label {
+    font-size: 13px;
+    color: #666;
+  }
+
+  .fee-item-value {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a1a1a;
+  }
+
+  .fee-divider {
+    height: 1px;
+    background: rgba(0,0,0,0.08);
+    margin: 16px 0;
+  }
+
+  .fee-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .fee-total-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+
+  .fee-total-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #f97316;
+  }
+
+  .fee-note {
+    font-size: 11px;
+    color: #aaa;
+    text-align: center;
+    margin-top: 16px;
+    font-style: italic;
+  }
+
+  .info-strip {
+    background: #fafafa;
+    border: 1px solid rgba(0,0,0,0.07);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    text-align: left;
+  }
+
+  .info-strip-title {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 10px;
+  }
+
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 7px;
+  }
+
+  .info-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .info-label {
+    font-size: 12px;
+    color: #666;
+  }
+
+  .info-value {
+    font-size: 12px;
+    font-weight: 500;
+    color: #1a1a1a;
+  }
+
+  .modal-close-btn {
+    width: 100%;
+    padding: 11px;
+    background: transparent;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 11px;
+    color: #888;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .modal-close-btn:hover {
+    background: #f5f5f5;
+    color: #555;
+  }
 `;
 
 /* ─── Icon components ───────────────────────────────────────────────────── */
@@ -125,8 +320,75 @@ function CrownIcon() {
   );
 }
 
+function DollarIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M12 2V22M17 5H9.5C8.57174 5 7.6815 5.36875 7.02513 6.02513C6.36875 6.6815 6 7.57174 6 8.5C6 9.42826 6.36875 10.3185 7.02513 10.9749C7.6815 11.6313 8.57174 12 9.5 12H14.5C15.4283 12 16.3185 12.3687 16.9749 13.0251C17.6313 13.6815 18 14.5717 18 15.5C18 16.4283 17.6313 17.3185 16.9749 17.9749C16.3185 18.6313 15.4283 19 14.5 19H6" />
+    </svg>
+  );
+}
+
+/* ─── Fee Information Modal ─────────────────────────────────────────────── */
+function FeeInformationModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-icon-wrap">
+          <DollarIcon />
+        </div>
+        <p className="modal-title">Challenge Participation Fee</p>
+        <p className="modal-sub">One-time payment to unlock full access</p>
+
+        <div className="fee-breakdown">
+          <div className="fee-item">
+            <span className="fee-item-label">Registration Fee</span>
+            <span className="fee-item-value">${REGISTRATION_FEE}</span>
+          </div>
+          <div className="fee-item">
+            <span className="fee-item-label">Insurance Fee</span>
+            <span className="fee-item-value">${INSURANCE_FEE}</span>
+          </div>
+          <div className="fee-divider"></div>
+          <div className="fee-total">
+            <span className="fee-total-label">Total Investment</span>
+            <span className="fee-total-value">${TOTAL_FEE}</span>
+          </div>
+        </div>
+
+        <div className="info-strip">
+          <p className="info-strip-title">What&apos;s Included</p>
+          <div className="info-row">
+            <span className="info-label">✓ Challenge Access</span>
+          </div>
+          <div className="info-row">
+            <span className="info-label">✓ Insurance Coverage</span>
+          </div>
+          <div className="info-row">
+            <span className="info-label">✓ Prize Eligibility</span>
+          </div>
+          <div className="info-row">
+            <span className="info-label">✓ Priority Support</span>
+          </div>
+        </div>
+
+        <p className="fee-note">
+          Contact our support team to complete your payment
+        </p>
+
+        <button className="modal-close-btn" onClick={onClose}>
+          Close
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function SubscriptionRequiredScreen({ userEmail }: { userEmail: string }) {
   const { refreshUserStatus } = useDashboard();
+  const [showFeeModal, setShowFeeModal] = useState(false);
+  
   const msg = whatsAppMessages.payment(userEmail);
 
   // Poll for subscription status every 10 seconds
@@ -139,10 +401,30 @@ export default function SubscriptionRequiredScreen({ userEmail }: { userEmail: s
   }, [refreshUserStatus]);
 
   const contacts = [
-    { label: 'WhatsApp Support 1',  sub: 'Primary',   icon: <WaIcon />, action: () => openWhatsApp(msg) },
-    { label: 'WhatsApp Support 2',  sub: 'Secondary', icon: <WaIcon />, action: () => openWhatsAppSecondary(msg) },
-    { label: 'Telegram Support 1',  sub: 'Primary',   icon: <TgIcon />, action: () => openTelegram(msg) },
-    { label: 'Telegram Support 2',  sub: 'Secondary', icon: <TgIcon />, action: () => openTelegramSecondary(msg) },
+    { 
+      label: 'WhatsApp Support 1',  
+      sub: 'Primary',   
+      icon: <WaIcon />, 
+      action: () => openWhatsApp(msg) 
+    },
+    { 
+      label: 'WhatsApp Support 2',  
+      sub: 'Secondary', 
+      icon: <WaIcon />, 
+      action: () => openWhatsAppSecondary(msg) 
+    },
+    { 
+      label: 'Telegram Support 1',  
+      sub: 'Primary',   
+      icon: <TgIcon />, 
+      action: () => openTelegram(msg) 
+    },
+    { 
+      label: 'Telegram Support 2',  
+      sub: 'Secondary', 
+      icon: <TgIcon />, 
+      action: () => openTelegramSecondary(msg) 
+    },
   ];
 
   return (
@@ -180,6 +462,12 @@ export default function SubscriptionRequiredScreen({ userEmail }: { userEmail: s
           </div>
         </div>
 
+        {/* View Fee Details Button */}
+        <button className="view-fee-btn" onClick={() => setShowFeeModal(true)}>
+          <Eye size={16} />
+          View Fee Details
+        </button>
+
         {/* Contact options */}
         <p className="contact-label">Contact us to activate your subscription</p>
         <div className="contact-stack">
@@ -199,6 +487,12 @@ export default function SubscriptionRequiredScreen({ userEmail }: { userEmail: s
           Already subscribed? The page will refresh automatically once your subscription is activated.
         </p>
       </div>
+
+      {/* Fee Information Modal */}
+      <FeeInformationModal 
+        isOpen={showFeeModal} 
+        onClose={() => setShowFeeModal(false)} 
+      />
     </div>
   );
 }

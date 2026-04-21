@@ -104,7 +104,7 @@ export default function TrustSafety() {
             <span className="text-orange-500">Our Priority</span>
           </h2>
           <p className="text-gray-500 text-lg">
-            We've designed every aspect with participant safety in mind
+            We&spos;ve designed every aspect with participant safety in mind
           </p>
         </div>
 

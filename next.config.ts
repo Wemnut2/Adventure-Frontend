@@ -9,6 +9,30 @@ const nextConfig = {
         port: "8000",
         pathname: "/media/**",
       },
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
+        port: '',
+        pathname: '/vi/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.ytimg.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'vumbnail.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.vimeocdn.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 

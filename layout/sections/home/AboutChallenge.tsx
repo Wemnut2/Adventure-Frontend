@@ -221,7 +221,7 @@ export default function AboutChallenge() {
               </p>
               <p className="description-text">
                 No phones, no internet, no human contact — just you, your thoughts,
-                and the silence. It's the ultimate test of mental fortitude and
+                and the silence. It&apos;s the ultimate test of mental fortitude and
                 self-discipline.
               </p>
             </div>
@@ -290,7 +290,7 @@ export default function AboutChallenge() {
             {/* Additional Info */}
             <div className="mt-6 pt-6 border-t border-gray-100">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center shrink-0">
                   <Award size={14} className="text-orange-500" />
                 </div>
                 <p className="text-xs text-gray-500 leading-relaxed">

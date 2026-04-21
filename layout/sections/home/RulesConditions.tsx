@@ -177,7 +177,7 @@ export default function RulesConditions() {
                 <div key={i} className="protocol-item">
                   <div className="flex items-start gap-3 mb-2">
                     <div 
-                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                       style={{ backgroundColor: `${protocol.color}10` }}
                     >
                       <protocol.icon size={16} style={{ color: protocol.color }} />

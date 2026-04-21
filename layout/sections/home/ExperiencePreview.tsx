@@ -136,7 +136,7 @@ export default function ExperiencePreview() {
               {whatToExpect.map((item, i) => (
                 <div key={i} className="expect-item">
                   <div 
-                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                    className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
                     style={{ backgroundColor: `${item.color}10` }}
                   >
                     <item.icon size={18} style={{ color: item.color }} />
@@ -156,7 +156,7 @@ export default function ExperiencePreview() {
             {/* Quote */}
             <div className="quote-card mt-8">
               <p className="text-sm text-gray-600 italic leading-relaxed mb-3">
-                "The silence becomes a character of its own. You'll hear your thoughts like never before."
+                &ldquo;The silence becomes a character of its own. You&apos;ll hear your thoughts like never before.&rdquo;
               </p>
               <p className="text-xs text-gray-400 flex items-center gap-2">
                 <span className="w-6 h-px bg-gray-300"></span>
@@ -179,7 +179,7 @@ export default function ExperiencePreview() {
                   style={{ animationDelay: `${i * 0.1}s` }}
                 >
                   <div 
-                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                    className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
                     style={{ backgroundColor: `${item.color}10` }}
                   >
                     <item.icon size={16} style={{ color: item.color }} />

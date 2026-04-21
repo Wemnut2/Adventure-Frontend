@@ -200,7 +200,7 @@ export default function HowItWorks() {
           <span className="section-badge">How It Works</span>
           <h2 className="section-title">Simple 6-Step Process</h2>
           <p className="section-subtitle">
-            From application to reward — here's how your journey unfolds
+            From application to reward — here&apos;s how your journey unfolds
           </p>
         </div>
 
