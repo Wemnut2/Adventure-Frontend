@@ -70,7 +70,7 @@ export default function RegisterPage() {
       await registerMutation.mutateAsync(data);
 
       showToast(
-        'Registration successful! Please check your email to verify your account.',
+        'Registration successful! Login your account.',
         'success'
       );
 
