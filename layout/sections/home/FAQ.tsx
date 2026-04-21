@@ -137,7 +137,7 @@ export default function FAQ() {
           <h2 className="font-serif text-4xl md:text-5xl font-medium text-gray-900 mb-4 tracking-tight">
             Got Questions?
             <br />
-            <span className="text-orange-500">We've Got Answers.</span>
+            <span className="text-orange-500">We&apos;ve Got Answers.</span>
           </h2>
           <p className="text-gray-500 text-lg">
             Everything you need to know before applying

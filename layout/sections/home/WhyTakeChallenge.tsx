@@ -190,7 +190,7 @@ export default function WhyTakeChallenge() {
         <div className="inspire-quote">
           <Sparkles className="w-6 h-6 text-orange-400 mx-auto mb-4" />
           <p className="quote-text">
-            "The person who leaves the room is never the same as the person who entered."
+            &quot;The person who leaves the room is never the same as the person who entered.&quot;
           </p>
           <p className="text-sm text-gray-400 mt-4">— Challenge Philosophy</p>
         </div>

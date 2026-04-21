@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Send, CheckCircle, User, MapPin, DollarSign, FileText, MessageCircle, AlertCircle, XCircle, HelpCircle } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Send, User, MapPin, DollarSign, FileText, MessageCircle, AlertCircle, XCircle, HelpCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { apiService } from "@/libs/services/api";
 import {
@@ -44,7 +44,6 @@ export interface UserProfile {
   updated_at?: string;
 }
 
-
 type FormData = {
   fullName: string; address: string; gender: string; age: string;
   monthlyIncome: string; maritalStatus: string; contactNumber: string;
@@ -55,7 +54,6 @@ type FormData = {
 
 import { AxiosError } from 'axios';
 
-// Define the error response type
 interface ApiErrorResponse {
   [key: string]: string | string[] | undefined;
   non_field_errors?: string[];
@@ -212,42 +210,6 @@ const STYLES = `
 
   .stack { display: flex; flex-direction: column; gap: 8px; }
 
-  /* Payment modal */
-  .modal-overlay { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; padding: 20px; }
-  .modal-card {
-    background: #fff; border-radius: 18px;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.14);
-    max-width: 400px; width: 100%; padding: 28px 24px;
-    max-height: 90vh; overflow-y: auto;
-    animation: dropIn 0.18s ease;
-  }
-  @keyframes dropIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
-  .modal-icon-wrap {
-    width: 48px; height: 48px; border-radius: 50%; background: #f5f5f5;
-    display: flex; align-items: center; justify-content: center;
-    margin: 0 auto 14px; color: #888;
-  }
-  .modal-title { font-family: 'DM Serif Display', serif; font-size: 20px; color: #1a1a1a; text-align: center; margin-bottom: 6px; letter-spacing: -0.01em; }
-  .modal-sub   { font-size: 12px; color: #aaa; text-align: center; margin-bottom: 20px; }
-
-  .contact-btn {
-    width: 100%; display: flex; align-items: center; gap: 12px;
-    padding: 12px 14px; border-radius: 10px; cursor: pointer;
-    background: #fafafa; border: 1px solid rgba(0,0,0,0.08);
-    text-align: left; margin-bottom: 8px; transition: background 0.15s, border-color 0.15s;
-  }
-  .contact-btn:hover { background: #f0f0f0; border-color: rgba(0,0,0,0.16); }
-  .contact-btn-icon {
-    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    background: #e5e5e5; color: #555;
-  }
-  .contact-btn-label  { font-size: 12.5px; font-weight: 500; color: #1a1a1a; }
-  .contact-btn-sub    { font-size: 11px; color: #aaa; margin-top: 1px; }
-  .contact-btn-arrow  { margin-left: auto; color: #ccc; }
-  .modal-later { background: none; border: none; cursor: pointer; width: 100%; padding: 10px; font-size: 12px; color: #aaa; margin-top: 4px; transition: color 0.15s; font-family: 'DM Sans', sans-serif; }
-  .modal-later:hover { color: #555; }
-
   /* FAB help button */
   .fab {
     position: fixed; bottom: 24px; right: 24px; z-index: 40;
@@ -279,6 +241,8 @@ const STYLES = `
     text-align: left;
   }
   .fab-popup-item:hover { background: #f5f5f5; color: #1a1a1a; }
+
+  @keyframes dropIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
 `;
 
 /* ─── Tiny helpers ──────────────────────────────────────────────────────── */
@@ -317,11 +281,6 @@ function ErrorAlert({ errors, onClose }: { errors: FormErrors; onClose: () => vo
       <XCircle size={15} color="#e05252" style={{ flexShrink: 0, marginTop: 1 }} />
       <div className="err-list">
         <p className="err-alert-title">Please fix {entries.length} error{entries.length > 1 ? 's' : ''} before submitting</p>
-        {/* {entries.map(([k, msg]) => (
-          <p className="err-list-item" key={k}>
-            <b style={{ fontWeight: 500 }}>{k.replace(/([A-Z])/g, ' $1').trim()}:</b> {msg}
-          </p>
-        ))} */}
       </div>
       <button className="err-close" onClick={onClose}><XCircle size={14} /></button>
     </div>
@@ -333,7 +292,6 @@ function QuickSupportButton() {
   const user = useAuthStore(s => s.user);
   const contacts = getAvailableContacts();
 
-  // Add useCallback to prevent unnecessary re-renders
   const handle = useCallback((type: string, isSecondary: boolean) => {
     const msg = `Hello, I need help with the challenge application. Email: ${user?.email || 'N/A'}`;
     if (type === 'whatsapp') {
@@ -352,7 +310,6 @@ function QuickSupportButton() {
     setOpen(false);
   }, [user?.email]);
 
-  // Add effect to handle click outside
   useEffect(() => {
     if (!open) return;
     
@@ -386,37 +343,313 @@ function QuickSupportButton() {
   );
 }
 
-function PaymentMethodModal({ isOpen, onClose, onSelect }: {
-  isOpen: boolean; onClose: () => void;
-  onSelect: (method: string) => void; userEmail: string;
-}) {
-  if (!isOpen) return null;
-  const contacts = getAvailableContacts();
+// Subscription Required Screen Component (integrated)
+const SubscriptionRequiredScreen = ({ userEmail }: { userEmail: string; onRefreshNeeded: () => void }) => {
+  const [showFeeModal, setShowFeeModal] = useState(false);
+  const { refreshUserStatus } = useDashboard();
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const router = useRouter();
+
+  const msg = whatsAppMessages.payment(userEmail);
+
+  // Fast polling (every 3 seconds) for immediate dashboard redirect
+  useEffect(() => {
+    let isMounted = true;
+    
+    const checkPaymentStatus = async () => {
+      try {
+        const { data: profile } = await apiService.get("/auth/profile/");
+        
+        // Check if both fees are paid
+        if (profile.registration_fee_paid && profile.insurance_fee_paid) {
+          if (isMounted && pollingRef.current) {
+            clearInterval(pollingRef.current);
+            pollingRef.current = null;
+          }
+          // Immediate redirect to dashboard
+          router.push("/dashboard");
+        }
+      } catch (error) {
+        console.error("Error checking payment status:", error);
+      }
+    };
+
+    // Poll every 3 seconds for fast response
+    pollingRef.current = setInterval(checkPaymentStatus, 3000);
+    
+    // Also trigger a refresh when component mounts
+    refreshUserStatus();
+
+    return () => {
+      isMounted = false;
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+    };
+  }, [refreshUserStatus, router]);
+
+  const contacts = [
+    { 
+      label: 'WhatsApp Support 1',  
+      sub: 'Primary',   
+      icon: <MessageCircle size={15} />, 
+      action: () => openWhatsApp(msg) 
+    },
+    { 
+      label: 'WhatsApp Support 2',  
+      sub: 'Secondary', 
+      icon: <MessageCircle size={15} />, 
+      action: () => openWhatsAppSecondary(msg) 
+    },
+    { 
+      label: 'Telegram Support 1',  
+      sub: 'Primary',   
+      icon: <MessageCircle size={15} />, 
+      action: () => openTelegram(msg) 
+    },
+    { 
+      label: 'Telegram Support 2',  
+      sub: 'Secondary', 
+      icon: <MessageCircle size={15} />, 
+      action: () => openTelegramSecondary(msg) 
+    },
+  ];
+
   return (
-    <div className="modal-overlay">
-      <div className="modal-card">
-        <div className="modal-icon-wrap"><MessageCircle size={22} /></div>
-        <p className="modal-title">Complete Payment</p>
-        <p className="modal-sub">Choose your preferred platform to proceed with payment.</p>
-        {contacts.map((c, i) => (
-          <button
-            key={i}
-            className="contact-btn"
-            onClick={() => onSelect(`${c.type}-${c.isPrimary ? 'primary' : 'secondary'}`)}
-          >
-            <span className="contact-btn-icon"><MessageCircle size={15} /></span>
-            <span>
-              <p className="contact-btn-label">{c.label}</p>
-              <p className="contact-btn-sub">{c.isPrimary ? 'Primary Support' : 'Secondary Support'}</p>
-            </span>
-            <span className="contact-btn-arrow">›</span>
-          </button>
-        ))}
-        <button className="modal-later" onClick={onClose}>I&apos;ll do this later</button>
+    <div className="status-page">
+      <div className="status-card" style={{ maxWidth: 480 }}>
+        <div className="status-icon-wrap">
+          <DollarSign size={24} color="#fff" />
+        </div>
+        <p className="status-title">Premium Access Required</p>
+        <p className="status-body">
+          Your application has been submitted! To activate your challenge participation, please complete the payment.
+        </p>
+
+        <div className="info-strip">
+          <p className="info-strip-title">Payment Summary</p>
+          <div className="info-row">
+            <span className="info-label">Registration Fee</span>
+            <span className="info-value">$500</span>
+          </div>
+          <div className="info-row">
+            <span className="info-label">Insurance Fee</span>
+            <span className="info-value">$100</span>
+          </div>
+          <div className="info-row" style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: 8, marginTop: 4 }}>
+            <span className="info-label" style={{ fontWeight: 600, color: '#555' }}>Total</span>
+            <span className="info-value" style={{ fontWeight: 600, color: '#f97316' }}>$600</span>
+          </div>
+        </div>
+
+        <button className="submit-btn" onClick={() => setShowFeeModal(true)} style={{ marginBottom: 12 }}>
+          <Eye size={16} /> View Payment Details
+        </button>
+
+        <p className="contact-label" style={{ marginTop: 8, marginBottom: 10 }}>Contact us to complete payment:</p>
+        <div className="stack">
+          {contacts.map((c, i) => (
+            <button key={i} className="contact-btn" onClick={c.action}>
+              <span className="contact-btn-icon">{c.icon}</span>
+              <span>
+                <p className="contact-btn-label">{c.label}</p>
+                <p className="contact-btn-sub">{c.sub}</p>
+              </span>
+              <span className="contact-btn-arrow">›</span>
+            </button>
+          ))}
+        </div>
+        
+        <p className="status-body" style={{ marginTop: 16, marginBottom: 0, fontSize: 11 }}>
+          ⚡ The page will automatically redirect to your dashboard once payment is confirmed.
+        </p>
       </div>
+
+      {/* Payment Details Modal */}
+      {showFeeModal && (
+        <div className="modal-overlay" onClick={() => setShowFeeModal(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-icon-wrap">
+              <DollarSign size={22} color="#fff" />
+            </div>
+            <p className="modal-title">Payment Details</p>
+            <p className="modal-sub">One-time payment to unlock full access</p>
+
+            <div className="fee-breakdown">
+              <div className="fee-item">
+                <span className="fee-item-label">Registration Fee</span>
+                <span className="fee-item-value">$500</span>
+              </div>
+              <div className="fee-item">
+                <span className="fee-item-label">Insurance Fee</span>
+                <span className="fee-item-value">$100</span>
+              </div>
+              <div className="fee-divider"></div>
+              <div className="fee-total">
+                <span className="fee-total-label">Total Investment</span>
+                <span className="fee-total-value">$600</span>
+              </div>
+            </div>
+
+            <div className="info-strip">
+              <p className="info-strip-title">What&apos;s Included</p>
+              <div className="info-row">
+                <span className="info-label">✓ Challenge Access</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">✓ Insurance Coverage</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">✓ Prize Eligibility</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">✓ Priority Support</span>
+              </div>
+            </div>
+
+            <p className="fee-note">
+              Contact our support team to complete your payment via WhatsApp or Telegram
+            </p>
+
+            <button className="modal-close-btn" onClick={() => setShowFeeModal(false)}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        .contact-btn {
+          width: 100%; display: flex; align-items: center; gap: 10px;
+          padding: 11px 14px; background: #fafafa;
+          border: 1px solid rgba(0,0,0,0.08); border-radius: 10px;
+          cursor: pointer; font-family: 'DM Sans', sans-serif;
+          font-size: 12.5px; font-weight: 500; color: #1a1a1a;
+          transition: background 0.15s, border-color 0.15s;
+          text-align: left;
+        }
+        .contact-btn:hover { background: #f0f0f0; border-color: rgba(0,0,0,0.16); }
+        .contact-btn-icon {
+          width: 30px; height: 30px; border-radius: 50%;
+          background: #e5e5e5; color: #666;
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
+        }
+        .contact-btn-label { font-size: 12.5px; font-weight: 500; color: #1a1a1a; margin: 0; }
+        .contact-btn-sub { font-size: 11px; color: #bbb; margin-top: 1px; }
+        .contact-btn-arrow { margin-left: auto; color: #ccc; font-size: 16px; line-height: 1; }
+        .modal-overlay {
+          position: fixed; inset: 0; z-index: 100;
+          background: rgba(0,0,0,0.45);
+          display: flex; align-items: center; justify-content: center;
+          padding: 20px;
+          animation: fadeIn 0.15s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal-card {
+          background: #fff;
+          border-radius: 18px;
+          box-shadow: 0 8px 40px rgba(0,0,0,0.14);
+          max-width: 400px; width: 100%;
+          padding: 28px 24px;
+          max-height: 90vh;
+          overflow-y: auto;
+          animation: slideUp 0.18s ease;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-icon-wrap {
+          width: 48px; height: 48px; border-radius: 50%;
+          background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+          display: flex; align-items: center; justify-content: center;
+          margin: 0 auto 14px; color: #fff;
+        }
+        .modal-title {
+          font-family: 'DM Serif Display', serif;
+          font-size: 20px; color: #1a1a1a;
+          text-align: center; margin-bottom: 6px;
+          letter-spacing: -0.01em;
+        }
+        .modal-sub {
+          font-size: 12px; color: #aaa;
+          text-align: center; margin-bottom: 20px;
+        }
+        .fee-breakdown {
+          background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+          border-radius: 12px;
+          padding: 20px;
+          margin-bottom: 20px;
+          border: 1px solid rgba(0,0,0,0.06);
+        }
+        .fee-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+        }
+        .fee-item:last-of-type {
+          margin-bottom: 0;
+        }
+        .fee-item-label {
+          font-size: 13px;
+          color: #666;
+        }
+        .fee-item-value {
+          font-size: 14px;
+          font-weight: 500;
+          color: #1a1a1a;
+        }
+        .fee-divider {
+          height: 1px;
+          background: rgba(0,0,0,0.08);
+          margin: 16px 0;
+        }
+        .fee-total {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .fee-total-label {
+          font-size: 14px;
+          font-weight: 600;
+          color: #1a1a1a;
+        }
+        .fee-total-value {
+          font-size: 20px;
+          font-weight: 700;
+          color: #f97316;
+        }
+        .fee-note {
+          font-size: 11px;
+          color: #aaa;
+          text-align: center;
+          margin-top: 16px;
+          font-style: italic;
+        }
+        .modal-close-btn {
+          width: 100%;
+          padding: 11px;
+          background: transparent;
+          border: 1px solid rgba(0,0,0,0.1);
+          border-radius: 11px;
+          color: #888;
+          font-size: 12.5px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.15s;
+          font-family: 'DM Sans', sans-serif;
+        }
+        .modal-close-btn:hover {
+          background: #f5f5f5;
+          color: #555;
+        }
+      `}</style>
     </div>
   );
-}
+};
+
+// Import useDashboard hook
+import { useDashboard } from "@/libs/providers/DashboardProvider";
+import { Eye } from 'lucide-react';
 
 /* ─── Main component ────────────────────────────────────────────────────── */
 export default function ApplicationSection({ skipProfileCheck = false }: { skipProfileCheck?: boolean }) {
@@ -427,15 +660,15 @@ export default function ApplicationSection({ skipProfileCheck = false }: { skipP
     reason: "", participantSignature: "", participantSignatureDate: "",
   });
 
-  const [submitted, setSubmitted]                   = useState(false);
+  const [submitted, setSubmitted]                       = useState(false);
   const [loading, setLoading]                       = useState(false);
   const [initialLoading, setInitialLoading]         = useState(true);
-  const [showPaymentModal, setShowPaymentModal]     = useState(false);
   const [submittedEmail, setSubmittedEmail]         = useState("");
   const [hasExistingApplication, setHasExisting]   = useState(false);
   const [existingProfile, setExistingProfile] = useState<UserProfile | null>(null);
   const [formErrors, setFormErrors]                 = useState<FormErrors>({});
   const [showErrorAlert, setShowErrorAlert]         = useState(true);
+  const [showSubscriptionScreen, setShowSubscriptionScreen] = useState(false);
 
   const loadUser = useAuthStore(s => s.loadUser);
   const user     = useAuthStore(s => s.user);
@@ -449,10 +682,21 @@ export default function ApplicationSection({ skipProfileCheck = false }: { skipP
         if (profile.full_name) {
           setHasExisting(true);
           setExistingProfile(profile);
-          if (profile.registration_fee_paid && profile.insurance_fee_paid) {
-            router.push("/dashboard"); return;
+          
+          // Check if payment is pending
+          if (profile.challenge_status === 'payment_pending' && (!profile.registration_fee_paid || !profile.insurance_fee_paid)) {
+            setShowSubscriptionScreen(true);
+            setSubmitted(true);
+          } 
+          // If fees are already paid, redirect to dashboard
+          else if (profile.registration_fee_paid && profile.insurance_fee_paid) {
+            router.push("/dashboard");
+            return;
           }
-          setSubmitted(true);
+          // If other status, show existing application
+          else {
+            setSubmitted(true);
+          }
         }
       } catch (e) {
         console.error(e);
@@ -490,15 +734,6 @@ export default function ApplicationSection({ skipProfileCheck = false }: { skipP
       if (formErrors[field]) setFormErrors(p => ({ ...p, [field]: undefined }));
     };
 
-  const handlePaymentSelect = (method: string) => {
-    const msg = whatsAppMessages.payment(user?.email || submittedEmail);
-    if (method === 'whatsapp-primary')  openWhatsApp(msg);
-    if (method === 'whatsapp-secondary') openWhatsAppSecondary(msg);
-    if (method === 'telegram-primary')  openTelegram(msg);
-    if (method === 'telegram-secondary') openTelegramSecondary(msg);
-    setShowPaymentModal(false);
-  };
-
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validateForm()) { setShowErrorAlert(true); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
@@ -520,39 +755,37 @@ export default function ApplicationSection({ skipProfileCheck = false }: { skipP
       });
       await apiService.patch("/auth/profile/", { status: "payment_pending" });
       await loadUser();
-  setSubmitted(true);
-  setSubmittedEmail(formData.email);
-  setShowPaymentModal(true);
-  setHasExisting(true);
-} catch (err: unknown) {
-  // Type guard to check if it's an AxiosError
-  if (err instanceof AxiosError && err.response?.data) {
-    const apiErrors = err.response.data as ApiErrorResponse;
-    
-    const fe: FormErrors = {};
-    Object.keys(apiErrors).forEach((k) => {
-      const value = apiErrors[k];
-      const v = Array.isArray(value) ? value[0] : value;
-      if (k === 'non_field_errors') {
-        fe.general = v as string;
+      setSubmitted(true);
+      setSubmittedEmail(formData.email);
+      setHasExisting(true);
+      // Show subscription screen immediately
+      setShowSubscriptionScreen(true);
+    } catch (err: unknown) {
+      if (err instanceof AxiosError && err.response?.data) {
+        const apiErrors = err.response.data as ApiErrorResponse;
+        
+        const fe: FormErrors = {};
+        Object.keys(apiErrors).forEach((k) => {
+          const value = apiErrors[k];
+          const v = Array.isArray(value) ? value[0] : value;
+          if (k === 'non_field_errors') {
+            fe.general = v as string;
+          } else {
+            fe[k as keyof FormData] = v as string;
+          }
+        });
+        setFormErrors(fe);
+        setShowErrorAlert(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else if (err instanceof Error) {
+        console.error('Error:', err.message);
+        setFormErrors({ general: err.message });
+        setShowErrorAlert(true);
       } else {
-        fe[k as keyof FormData] = v as string;
+        setFormErrors({ general: 'An unexpected error occurred' });
+        setShowErrorAlert(true);
       }
-    });
-    setFormErrors(fe);
-    setShowErrorAlert(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  } else if (err instanceof Error) {
-    // Handle regular errors
-    console.error('Error:', err.message);
-    setFormErrors({ general: err.message });
-    setShowErrorAlert(true);
-  } else {
-    // Handle unknown errors
-    setFormErrors({ general: 'An unexpected error occurred' });
-    setShowErrorAlert(true);
-  }
-} finally {
+    } finally {
       setLoading(false);
     }
   };
@@ -570,51 +803,25 @@ export default function ApplicationSection({ skipProfileCheck = false }: { skipP
     </div>
   );
 
-  /* ── Payment pending ── */
-  if (submitted && hasExistingApplication && existingProfile?.challenge_status === 'payment_pending') return (
-    <>
-      <style>{STYLES}</style>
-      <div className="status-page">
-        <div className="status-card">
-          <div className="status-icon-wrap">
-            <CheckCircle size={24} color="#fff" />
-          </div>
-          <p className="status-title">Application Submitted</p>
-          <p className="status-body">
-            Your application has been received. Complete your payment to activate your challenge participation.
-          </p>
-          <div className="info-strip">
-            <p className="info-strip-title">Payment Summary</p>
-            <div className="info-row">
-              <span className="info-label">Registration Fee</span>
-              <span className="info-value">$110</span>
-            </div>
-            <div className="info-row">
-              <span className="info-label">Insurance Fee</span>
-              <span className="info-value">$110</span>
-            </div>
-            <div className="info-row" style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: 8, marginTop: 4 }}>
-              <span className="info-label" style={{ fontWeight: 600, color: '#555' }}>Total</span>
-              <span className="info-value" style={{ fontWeight: 600 }}>$220</span>
-            </div>
-          </div>
-          <div className="stack">
-            <button className="submit-btn" onClick={() => setShowPaymentModal(true)}>
-              <Send size={14} /> Proceed to Payment
-            </button>
-            <button className="ghost-btn" onClick={() => router.push('/dashboard')}>
-              Go to Dashboard
-            </button>
-          </div>
-        </div>
-      </div>
-      <QuickSupportButton />
-      <PaymentMethodModal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} onSelect={handlePaymentSelect} userEmail={user?.email || submittedEmail} />
-    </>
-  );
+  /* ── Show subscription screen when payment is pending ── */
+  if (showSubscriptionScreen && submitted && hasExistingApplication) {
+    return (
+      <>
+        <style>{STYLES}</style>
+        <SubscriptionRequiredScreen 
+          userEmail={user?.email || submittedEmail} 
+          onRefreshNeeded={() => {
+            // Force a hard refresh of the user data
+            loadUser();
+          }}
+        />
+        <QuickSupportButton />
+      </>
+    );
+  }
 
   /* ── Existing application (other statuses) ── */
-  if (hasExistingApplication && existingProfile) {
+  if (hasExistingApplication && existingProfile && !showSubscriptionScreen) {
     const contacts = getAvailableContacts();
     return (
       <>
@@ -836,7 +1043,6 @@ export default function ApplicationSection({ skipProfileCheck = false }: { skipP
       </div>
 
       <QuickSupportButton />
-      <PaymentMethodModal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} onSelect={handlePaymentSelect} userEmail={user?.email || submittedEmail} />
     </>
   );
 }
