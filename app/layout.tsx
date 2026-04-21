@@ -16,9 +16,9 @@ const geistMono = Geist_Mono({
 });  
 
 export const metadata: Metadata = {
-  title: "InvestX — Grow Your Wealth Intelligently",
+  title: "Adventure Challenge — Grow Your Wealth Intelligently",
   description:
-    "InvestX is a modern investment platform that empowers you to grow your wealth through smart task completion, automated investing, and real-time portfolio management.",
+    "Adventure Challenge is a modern investment platform that empowers you to grow your wealth through smart task completion, automated investing, and real-time portfolio management.",
   keywords: [
     "investment platform",
     "wealth management",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     "finance",
   ],
   openGraph: {
-    title: "InvestX — Grow Your Wealth Intelligently",
+    title: "Adventure Challenge — Grow Your Wealth Intelligently",
     description: "Smart investing and task-based earning on one platform.",
     type: "website",
   },
