@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });  
 
 export const metadata: Metadata = {
-  title: "Adventure Challenge — Grow Your Wealth Intelligently",
+  title: "Adventure Challenge - Grow Your Wealth Intelligently",
   description:
     "Adventure Challenge is a modern investment platform that empowers you to grow your wealth through smart task completion, automated investing, and real-time portfolio management.",
   keywords: [
