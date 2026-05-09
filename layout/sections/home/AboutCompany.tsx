@@ -6,20 +6,21 @@ const contactItems = [
   {
     icon: Mail,
     label: "Email",
-    value: "hello@theadventure.com",
-    link: "mailto:hello@theadventure.com"
+    value: "theadventurechallange@gmail.com",
+    link: "mailto:theadventurechallange@gmail.com"
   },
   {
     icon: Phone,
     label: "Phone",
-    value: "+1 (888) 424-7333",
-    link: "tel:+18884247333"
+    value: "+1 (717) 622-8597",
+    link: "tel:+17176228597"
   },
   {
     icon: MapPin,
     label: "Headquarters",
-    value: "123 Adventure Way, Denver, CO 80202",
-  },
+    value: "1424 Tehama St, Redding CA 96001",
+    link: "https://maps.google.com/?q=1424 Tehama St, Redding CA 96001"
+  }
 ];
 
 export default function AboutCompany() {
