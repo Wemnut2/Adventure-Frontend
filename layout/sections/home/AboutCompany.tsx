@@ -6,20 +6,20 @@ const contactItems = [
   {
     icon: Mail,
     label: "Email",
-    value: "theadventurechallange@gmail.co",
+    value: "theadventurechallange@gmail.com",
     link: "mailto:theadventurechallange@gmail.com"
   },
   {
     icon: Phone,
     label: "Phone",
-    value: "+1 (717) 622-85",
+    value: "+1 (717) 622-8597",
     link: "tel:+17176228597"
   },
   {
     icon: MapPin,
     label: "Headquarters",
     value: "1424 Tehama St, Redding CA 96001",
-    link: "https://maps.google.com/?q=1424 Tehama St, Redding CA 96001"
+    link: "mailto: https://maps.google.com/?q=1424 Tehama St, Redding CA 96001"
   }
 ];
 
