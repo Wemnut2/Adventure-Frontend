@@ -62,9 +62,9 @@ const socials = [
 ];
 
 const contactInfo = [
-  { icon: MapPin, text: "123 Adventure Way, Denver, CO 80202" },
-  { icon: Phone, text: "+1 (888) 424-7333" },
-  { icon: Mail, text: "hello@theadventure.com" },
+  { icon: MapPin, text: "1424 Tehama St, Redding CA 96001" },
+  { icon: Phone, text: "+1 777-622-8597" },
+  { icon: Mail, text: "theadventurechallange@gmail.com" },
 ];
 
 export default function Footer() {
