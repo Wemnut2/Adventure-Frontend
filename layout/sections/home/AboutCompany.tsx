@@ -6,13 +6,13 @@ const contactItems = [
   {
     icon: Mail,
     label: "Email",
-    value: "theadventurechallange@gmail.com",
+    value: "theadventurechallange@gmail.co",
     link: "mailto:theadventurechallange@gmail.com"
   },
   {
     icon: Phone,
     label: "Phone",
-    value: "+1 (717) 622-8597",
+    value: "+1 (717) 622-85",
     link: "tel:+17176228597"
   },
   {
